@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-# from sklearn.model_selection import train_test_split, cross_validate
+from sklearn.model_selection import train_test_split
 from decision_tree import DecisionTreeClassifier
 
 # read iris.csv
@@ -23,14 +23,14 @@ df['class'] = df['class'].map(class_mapping)
 # Later we need to implement cross-validation
 train_data = df.drop(columns='class')
 target_data = df['class']
-X_train, X_test, Y_train, Y_test = train_test_split(train_data, target_data, test_size=0.3, random_state=0)
+X_train, X_test, y_train, y_test = train_test_split(train_data, target_data, test_size=0.3, random_state=0)
 
 
 # Create DecisionTreeClassifier, train the decision tree with de data for trainning
-dt = DecisionTreeClassifier()
-dt.fit(X_train,Y_train)
+dt = DecisionTreeClassifier(min_samples_split=1, max_depth=10)
+dt.fit(X_train,y_train)
 
 # Get the results based on the train data. After that we need to compare the result with the original test data
 model_Y = dt.predict(X_test)
-# print("Accuracy = ",accuracy_score(Y_test,model_Y))
+print()
 
