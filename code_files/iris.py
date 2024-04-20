@@ -34,5 +34,7 @@ dt.fit(X_train,y_train)
 
 # Get the results based on the train data. After that we need to compare the result with the original test data
 # model_Y = dt.predict(X_test)
-# dt.print_tree()
+# dt.print_tree(dt.root)
+
+dt.TreePrinter()
 

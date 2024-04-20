@@ -46,3 +46,5 @@ dt.fit(X_train,y_train)
 # model_Y = dt.predict(X_test)
 # dt.print_tree()
 
+dt.TreePrinter()
+

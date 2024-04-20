@@ -22,7 +22,7 @@ class DecisionTreeClassifier:
                 left_node = self.build_tree(best_split["dataset_left"], curr_depth+1)
                 right_node = self.build_tree(best_split["dataset_right"], curr_depth+1)
                 return Node(best_split["feature_index"], best_split["feature_name"], best_split["threshold"], 
-                            left_node, right_node, best_split["info_gain"])
+                            right_node, left_node, best_split["info_gain"])
         
         leaf_value = self.calculate_leaf_value(y)
         return Node(leaf_value=leaf_value)
@@ -153,3 +153,45 @@ class DecisionTreeClassifier:
     #     print(str(node.feature_name)+": X_"+str(node.feature_index), "<=", node.threshold, "?", node.info_gain)
     #     self.print_tree(node.left_node, splits)
     #     self.print_tree(node.right_node, splits)
+
+
+
+#  PRETTY PRINTING ------------
+    def height(self, node):
+        if node is None: return 0
+        return max(self.height(node.left_node), self.height(node.right_node)) + 1;
+    
+    def getcol(self, h):
+        if h == 1:
+            return 1
+        return self.getcol(h-1) + self.getcol(h-1) +1
+    
+    def printTree(self, M, root, col, row, height):
+        if root is None: return
+        M[row][col] = root
+        self.printTree(M, root.left_node, col - pow(2, height - 2), row + 1, height - 1);
+        self.printTree(M, root.right_node, col + pow(2, height - 2), row + 1, height - 1);
+    
+ 
+    def TreePrinter(self):
+        h = self.height(self.root);
+        col = self.getcol(h);
+        M = []
+        print(h)
+        print(col)
+        for i in range(h): 
+            M.append([])
+            for j in range(col):
+                M[i].append(0)
+        print(M)
+        self.printTree(M, self.root, col // 2, 0, h);
+        for i in range (h):
+            for j in range (col):
+                if (M[i][j] == 0):
+                    print("   ", end="")
+                else:
+                    if M[i][j].leaf_value is None:
+                        print("N" + str(M[i][j].feature_index) + " ", end="")
+                    else:
+                        print("F" + str(M[i][j].leaf_value) + " ", end="")
+            print()
