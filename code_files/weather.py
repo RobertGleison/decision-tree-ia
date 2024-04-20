@@ -26,6 +26,8 @@ windy_mapping = {
 df['Windy'] = df['Windy'].map(windy_mapping)
 df['Weather'] = df['Weather'].map(weather_mapping)
 df['Play'] = df['Play'].map(play_mapping)
+df.drop(df.columns[0], axis=1, inplace=True)
+
 
 # Separa a última coluna do csv do resto do csv (ultima coluna = target, o resto = features)
 features = df.iloc[:,:-1]

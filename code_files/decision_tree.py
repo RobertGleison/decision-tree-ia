@@ -13,11 +13,11 @@ class DecisionTreeClassifier:
     # Cria os nós da arvore caso ainda precise splitar, no fim retorna o nó root já com seus filhos
     def build_tree(self, dataset, curr_depth=0):
         ''' recursive function to build the tree ''' 
-        X, y = dataset.iloc[:,:-1],dataset.iloc[:,-1]
-        num_samples, num_features = dataset.shape
+        X, y = dataset.iloc[:,:-1], dataset.iloc[:,-1]
+        num_samples, num_features = X.shape
         
-        if num_samples>=self.min_samples_split and curr_depth<=self.max_depth:
-            best_split = self.get_best_split(dataset, num_samples, num_features) # Escolhe o atributo para splitar o nó
+        if num_samples>=self.min_samples_split and curr_depth<=self.max_depth and not self.is_pure(y):
+            best_split = self.get_best_split(dataset, num_features-1) # Escolhe o atributo para splitar o nó
             if best_split["info_gain"]>0:
                 left_node = self.build_tree(best_split["dataset_left"], curr_depth+1)
                 right_node = self.build_tree(best_split["dataset_right"], curr_depth+1)
@@ -28,36 +28,44 @@ class DecisionTreeClassifier:
         return Node(leaf_value=leaf_value)
     
     #Faz todos os splits possiveis entre colunas e valores das linhas, retorna o que te dá mais ganho. Assim escolhemos o atributo pro split de um nó
-    def get_best_split(self, dataset, num_samples, num_features):
+    def get_best_split(self, dataset, num_features):
         ''' function to find the best split '''
         best_split = {}
         max_info_gain = -float("inf")
 
         for feature_index in range(num_features):
+            feature_name = dataset.columns[feature_index]
+            # if feature_name in used_attributes: continue
             feature_values = dataset.iloc[:, feature_index]
             possible_thresholds = pd.unique(feature_values)
             for threshold in possible_thresholds:
-                dataset_left, dataset_right = self.split(dataset, feature_index, threshold)
+                dataset_left, dataset_right = self.split(dataset, feature_index, feature_name, threshold)
                 if len(dataset_left)>0 and len(dataset_right)>0:
                     y, left_y, right_y = dataset.iloc[:, -1], dataset_left.iloc[:, -1], dataset_right.iloc[:, -1]
                     curr_info_gain = self.information_gain(y, left_y, right_y)
                     if curr_info_gain>max_info_gain:
                         best_split["feature_index"] = feature_index
-                        best_split["feature_name"] = dataset.columns[feature_index]
+                        best_split["feature_name"] = feature_name
                         best_split["threshold"] = threshold
                         best_split["dataset_left"] = dataset_left
                         best_split["dataset_right"] = dataset_right
                         best_split["info_gain"] = curr_info_gain
                         max_info_gain = curr_info_gain
+        # if best_split: used_attributes.add(best_split["feature_name"]) 
         return best_split
     
 
-    def split(self, dataset, feature_index, threshold):
+    def split(self, dataset, feature_index, feature_name, threshold):
         ''' function to split the data '''
-        dataset_left = dataset[dataset[feature_index] <= threshold] 
-        dataset_right = dataset[dataset[feature_index] > threshold] 
+        dataset_left = dataset[dataset[feature_name] <= threshold] 
+        dataset_right = dataset[dataset[feature_name] > threshold] 
         return dataset_left, dataset_right
     
+    def is_pure(self, target_column):
+        target_column = set(target_column)
+        return len(target_column) == 1
+
+
     # ver slides de elementos
     def information_gain(self, y_parent, y_left, y_right):
         ''' function to compute information gain '''
@@ -100,7 +108,7 @@ class DecisionTreeClassifier:
     # treina a arvpre
     def fit(self, X, y):
         ''' function to train the tree '''
-        dataset = pd.concat((X, y), axis=1, ignore_index=True)
+        dataset = pd.concat((X, y), axis=1)
         self.root = self.build_tree(dataset)
     
     # Deveria retornar uma coluna nova com predições, mas n funciona ainda
