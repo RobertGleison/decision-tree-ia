@@ -144,3 +144,12 @@ class DecisionTreeClassifier:
         #     print("%sright:" % (indent), end="")
         #     self.print_tree(node.right_node, indent + indent)
     
+    # def print_tree(self, node=None, splits=[]):
+    #     if node is None: return
+    #     if node.leaf_value is not None: 
+    #             print("folha: " + str(node.leaf_value))
+    #             return
+    #     # splits.append(node)
+    #     print(str(node.feature_name)+": X_"+str(node.feature_index), "<=", node.threshold, "?", node.info_gain)
+    #     self.print_tree(node.left_node, splits)
+    #     self.print_tree(node.right_node, splits)
