@@ -177,13 +177,11 @@ class DecisionTreeClassifier:
         h = self.height(self.root);
         col = self.getcol(h);
         M = []
-        print(h)
-        print(col)
         for i in range(h): 
             M.append([])
             for j in range(col):
                 M[i].append(0)
-        print(M)
+
         self.printTree(M, self.root, col // 2, 0, h);
         for i in range (h):
             for j in range (col):
