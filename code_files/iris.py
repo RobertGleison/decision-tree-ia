@@ -10,12 +10,13 @@ from sklearn.model_selection import LeaveOneOut
 def main():
     """Author: Sophia Cheto"""
     df = pd.read_csv('csv_files/iris.csv')
+
     # Map categorical values to discrete values
     class_mapping = {
     'Iris-setosa': 1,
     'Iris-versicolor': 2,
     'Iris-virginica' : 3
-}
+    }
 
     df['class'] = df['class'].map(class_mapping)
     df.drop(df.columns[0], axis=1, inplace=True)
@@ -66,40 +67,8 @@ def teste(dt, target, features):
         dt.TreePrinter()
 
         y_pred = dt.predict(X_test)
-        # print(y_test)
-        # print(model_Y)
-
-        # correct = 0
-        # total = 0
-        # for i in range(len(model_Y)):
-        #     total += 1
-        #     if model_Y[i] == y_test[i]: correct += 1
-
         print(accuracy_score(y_test, y_pred))
         
-
-    # # Perform Leave-One-Out Cross-Validation (LOOCV)
-    # loo = LeaveOneOut()
-    # accuracies = []
-
-    # for train_index, test_index in loo.split(features):
-    #     X_train, X_test = features.iloc[train_index], features.iloc[test_index]
-    #     y_train, y_test = target.iloc[train_index], target.iloc[test_index]
-        
-    #     dt.fit(X_train, y_train)
-    #     y_pred = dt.predict(X_test)
-    #     accuracies.append(accuracy_score(y_test, y_pred))
-   
-    # # X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=0.3, random_state=0)
-    # # print(accuracies)
-    # mean_accuracy = np.mean(accuracies)
-
-    # # dt.fit(X_train,y_train)
-
-    # # model_Y = dt.predict(X_test)
-    # print("Mean Accuracy Model:", mean_accuracy)
-    # # print("accuracy: ", accuracy_score(model_Y, y_test))
-    # # dt.TreePrinter()
 
 if __name__ == "__main__":
     main()

@@ -38,9 +38,6 @@ def main():
     # teste(dt, target, features)                ## 0,4 - 0,6 - 0,6 - 0,4 - 0,6
     
 
-
-    
-
 def cross_validation(dt, target, features):
     # Perform Leave-One-Out Cross-Validation (LOOCV)
     loo = LeaveOneOut()
@@ -71,35 +68,8 @@ def teste(dt, target, features):
         dt.TreePrinter()
 
         y_pred = dt.predict(X_test)
-        # print(y_test)
-        # print(model_Y)
-
-        # correct = 0
-        # total = 0
-        # for i in range(len(model_Y)):
-        #     total += 1
-        #     if model_Y[i] == y_test[i]: correct += 1
-
         print(accuracy_score(y_test, y_pred))
         
-
-
-    # # Perform Leave-One-Out Cross-Validation (LOOCV)
-    # loo = LeaveOneOut()
-    # accuracies = []
-
-    # for train_index, test_index in loo.split(features):
-    #     X_train, X_test = features.iloc[train_index], features.iloc[test_index]
-    #     y_train, y_test = target.iloc[train_index], target.iloc[test_index]
-        
-    #     dt.fit(X_train, y_train)
-    #     y_pred = dt.predict(X_test)
-    #     accuracies.append(accuracy_score(y_test, y_pred))
-    #     # dt.TreePrinter()
-
-    # print(accuracies)
-    # mean_accuracy = np.mean(accuracies)
-    # print("Mean Accuracy Model:", mean_accuracy)
 
 
 if __name__ == "__main__":
