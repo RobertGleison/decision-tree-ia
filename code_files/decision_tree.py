@@ -17,7 +17,7 @@ class DecisionTreeClassifier:
         X, y = dataset.iloc[:,:-1], dataset.iloc[:,-1]
         num_samples, num_features = X.shape
         
-        if num_samples>=self.min_samples_split and curr_depth<=self.max_depth and not self.is_pure(y):
+        if num_samples>=self.min_samples_split and curr_depth<self.max_depth and not self.is_pure(y):
             best_split = self.get_best_split(dataset, num_features-1) 
             if best_split["info_gain"]>0:
                 left_node = self.build_tree(best_split["dataset_left"], curr_depth+1)
