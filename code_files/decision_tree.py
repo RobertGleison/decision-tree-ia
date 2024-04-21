@@ -1,45 +1,43 @@
-from node import Node
+from dt_node import DTNode
 import numpy as np
 import pandas as pd
+from pandas import DataFrame, Series
+
 
 class DecisionTreeClassifier:
-    def __init__(self, max_depth=None, min_samples_split=None, criterium='entropy') -> None:
-        self.root = None
-        self.max_depth = max_depth # tamanho máximo da arvore
-        self.min_samples_split = min_samples_split # Quantidade mínima de linhas do csv dentro de uma folha. Eu expliquei o porque no vídeo q fiz
-        self.criterium = criterium
+    def __init__(self, max_depth:int=None, min_samples_split:int=None, criterium:str='entropy') -> None:
+        self.root:DTNode = None
+        self.max_depth:int = max_depth 
+        self.min_samples_split:int = min_samples_split 
+        self.criterium:int = criterium
 
 
-    # Cria os nós da arvore caso ainda precise splitar, no fim retorna o nó root já com seus filhos
-    def build_tree(self, dataset, curr_depth=0):
-        ''' recursive function to build the tree ''' 
+    def build_tree(self, dataset:DataFrame, curr_depth:int=0) -> DTNode:
+        '''Construct the Decision Tree from the root node''' 
         X, y = dataset.iloc[:,:-1], dataset.iloc[:,-1]
         num_samples, num_features = X.shape
         
         if num_samples>=self.min_samples_split and curr_depth<=self.max_depth and not self.is_pure(y):
-            best_split = self.get_best_split(dataset, num_features-1) # Escolhe o atributo para splitar o nó
+            best_split = self.get_best_split(dataset, num_features-1) 
             if best_split["info_gain"]>0:
                 left_node = self.build_tree(best_split["dataset_left"], curr_depth+1)
                 right_node = self.build_tree(best_split["dataset_right"], curr_depth+1)
-                return Node(best_split["feature_index"], best_split["feature_name"], best_split["threshold"], 
-                            right_node, left_node, best_split["info_gain"])
-        
-        leaf_value = self.calculate_leaf_value(y)
-        return Node(leaf_value=leaf_value)
+                return DTNode(best_split["feature_index"], best_split["feature_name"], best_split["threshold"], right_node, left_node, best_split["info_gain"])
+            
+        return DTNode(leaf_value=self.calculate_leaf_value(y))
     
-    #Faz todos os splits possiveis entre colunas e valores das linhas, retorna o que te dá mais ganho. Assim escolhemos o atributo pro split de um nó
-    def get_best_split(self, dataset, num_features):
-        ''' function to find the best split '''
+
+    def get_best_split(self, dataset:DataFrame, num_features:int) -> dict:
+        '''Get the best split for a node'''
         best_split = {}
         max_info_gain = -float("inf")
 
         for feature_index in range(num_features):
             feature_name = dataset.columns[feature_index]
-            # if feature_name in used_attributes: continue
             feature_values = dataset.iloc[:, feature_index]
             possible_thresholds = pd.unique(feature_values)
             for threshold in possible_thresholds:
-                dataset_left, dataset_right = self.split(dataset, feature_index, feature_name, threshold)
+                dataset_left, dataset_right = self.split(dataset, feature_name, threshold)
                 if len(dataset_left)>0 and len(dataset_right)>0:
                     y, left_y, right_y = dataset.iloc[:, -1], dataset_left.iloc[:, -1], dataset_right.iloc[:, -1]
                     curr_info_gain = self.information_gain(y, left_y, right_y)
@@ -51,24 +49,24 @@ class DecisionTreeClassifier:
                         best_split["dataset_right"] = dataset_right
                         best_split["info_gain"] = curr_info_gain
                         max_info_gain = curr_info_gain
-        # if best_split: used_attributes.add(best_split["feature_name"]) 
+                        
         return best_split
     
 
-    def split(self, dataset, feature_index, feature_name, threshold):
-        ''' function to split the data '''
-        dataset_left = dataset[dataset[feature_name] <= threshold] 
-        dataset_right = dataset[dataset[feature_name] > threshold] 
+    def split(self, dataset:DataFrame, feature_name:str, threshold:any) -> tuple[DataFrame, DataFrame]:
+        '''Get a split for a node based on a row and column'''
+        dataset_left = dataset.query(f"{feature_name} <= {threshold}")
+        dataset_right = dataset.query(f"{feature_name} > {threshold}")
         return dataset_left, dataset_right
     
-    def is_pure(self, target_column):
+
+    def is_pure(self, target_column:Series) -> bool:
         target_column = set(target_column)
         return len(target_column) == 1
 
 
-    # ver slides de elementos
-    def information_gain(self, y_parent, y_left, y_right):
-        ''' function to compute information gain '''
+    def information_gain(self, y_parent:Series, y_left:Series, y_right:Series) -> float:
+        '''Get the information gain for a node'''
         weight_left = len(y_left) / len(y_parent)
         weight_right = len(y_right) / len(y_parent)
         if self.criterium=="gini":
@@ -77,10 +75,9 @@ class DecisionTreeClassifier:
             gain = self.entropy(y_parent) - (weight_left*self.entropy(y_left) + weight_right*self.entropy(y_right))
         return gain
     
-    # ver slides de elementos
-    # entropia = (total_atual/total_pai) * gini
-    def entropy(self, y):
-        ''' function to compute entropy '''
+
+    def entropy(self, y:Series) -> float:
+        '''Get the entropy value for a node'''
         target_column = pd.unique(y)
         entropy = 0
         for attribute in target_column:
@@ -88,10 +85,9 @@ class DecisionTreeClassifier:
             entropy += -p_cls * np.log2(p_cls)
         return entropy
     
-    # gini = (negativo/total)**2 / (positivo/total)**2
-    # ver slides de elementos
-    def gini_index(self, y):
-        ''' function to compute gini index '''
+
+    def gini_index(self, y:Series) -> float:
+        '''Get the gini value for a node'''
         class_labels = pd.unique(y)
         gini = 0
         for cls in class_labels:
@@ -99,62 +95,37 @@ class DecisionTreeClassifier:
             gini += p_cls**2
         return 1 - gini
         
-    # Calcula basicamente a moda de uma maneira chique. Se o nó folha for impuro (com resultados diferentes), todos eles recebem o valor do resultado que mais se repete.
-    def calculate_leaf_value(self, Y):
-        ''' function to compute leaf node '''
-        list_Y = list(Y)
-        return max(set(list_Y), key=list_Y.count)
+
+    def calculate_leaf_value(self, y:Series) -> any:
+        '''Get the majority of results in a leaf node'''
+        list_y = list(y)
+        return max(set(list_y), key=list_y.count)
     
-    # treina a arvpre
-    def fit(self, X, y):
-        ''' function to train the tree '''
+
+    def fit(self, X:DataFrame, y:Series) -> None:
+        '''Fit the tree with a csv for trainning'''
         dataset = pd.concat((X, y), axis=1)
         self.root = self.build_tree(dataset)
     
-    # Deveria retornar uma coluna nova com predições, mas n funciona ainda
-    # def predict(self, X):
-    #     ''' function to predict new dataset '''
-    #     preditions = [self.make_prediction(x, self.root) for x in X]
-    #     return preditions
+
+    def predict(self, X_test:DataFrame) -> list[any]:
+        '''Predict results based on the trained tree and a new dataframe test'''
+        samples, _ = X_test.shape
+        predictions = []
+        for row_index in range(samples):
+            csv_row = X_test.iloc[row_index]
+            predictions.append(self.make_prediction(csv_row, self.root, X_test))
+        return predictions
     
 
-    # def make_prediction(self, x, node):
-    #     ''' function to predict a single data point '''
-    #     if node.leaf_value!=None: return node.leaf_value
-    #     feature_val = x[node.feature_index]
-    #     if feature_val<=node.threshold:
-    #         return self.make_prediction(x, node.left)
-    #     else:
-    #         return self.make_prediction(x, node.right)
+    def make_prediction(self, csv_row: tuple, node:DTNode, X_test:DataFrame) -> any:
+        '''Predict prediction for each row in dataframe'''
+        if node.leaf_value is not None: return node.leaf_value
+        feature_val = csv_row.iloc[node.feature_index]
+        if feature_val<=node.threshold:
+            return self.make_prediction(csv_row, node.left_node, X_test)
+        return self.make_prediction(csv_row, node.right_node, X_test)
     
-    # def print_tree(self, node=None, splits=None):
-    #     ''' function to print the tree '''
-    #     if node is None: node = self.root
-    #     if splits is None: splits = []
-    #     splits.append(node)
-    #     if node.right_node is not None: splits = self.print_tree(node.right_node, splits)
-    #     if node.leaf_value is not None: splits = self.print_tree(node.left_node, splits)
-    #     if node.right_node is None and node.left_node is None: return splits
-    #     return splits
-
-        # else:
-        #     print("X_"+str(node.feature_index), "<=", node.threshold, "?", node.info_gain)
-        #     print("%sleft:" % (indent), end="")
-        #     self.print_tree(node.left_node, indent + indent)
-        #     print("%sright:" % (indent), end="")
-        #     self.print_tree(node.right_node, indent + indent)
-    
-    # def print_tree(self, node=None, splits=[]):
-    #     if node is None: return
-    #     if node.leaf_value is not None: 
-    #             print("folha: " + str(node.leaf_value))
-    #             return
-    #     # splits.append(node)
-    #     print(str(node.feature_name)+": X_"+str(node.feature_index), "<=", node.threshold, "?", node.info_gain)
-    #     self.print_tree(node.left_node, splits)
-    #     self.print_tree(node.right_node, splits)
-
-
 
 #  PRETTY PRINTING ------------
     def height(self, node):
@@ -181,6 +152,7 @@ class DecisionTreeClassifier:
             M.append([])
             for j in range(col):
                 M[i].append(0)
+
 
         self.printTree(M, self.root, col // 2, 0, h);
         for i in range (h):

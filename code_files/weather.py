@@ -1,50 +1,54 @@
 import pandas as pd
 import numpy as np
-from sklearn.model_selection import train_test_split
-from decision_tree import DecisionTreeClassifier
-
-# Lê o csv
-df = pd.read_csv('csv_files/weather.csv')
- 
-
-# Tira os valores categoricos e coloca valores discretos (linha 10-28)
-play_mapping = {
-    'yes': 1,
-    'no': 0
-}
-weather_mapping = {
-    'sunny': 1,
-    'rainy': 2,
-    'overcast': 3
-}
-
-windy_mapping = {
-    True: 1,
-    False: 0
-}
-
-df['Windy'] = df['Windy'].map(windy_mapping)
-df['Weather'] = df['Weather'].map(weather_mapping)
-df['Play'] = df['Play'].map(play_mapping)
-df.drop(df.columns[0], axis=1, inplace=True)
+from decision_tree import DecisionTreeClassifier as DecisionTreeModel
+from sklearn.tree import DecisionTreeClassifier as DecisionTreeSKLearn
+from sklearn.metrics import accuracy_score
+from sklearn.model_selection import LeaveOneOut
 
 
-# Separa a última coluna do csv do resto do csv (ultima coluna = target, o resto = features)
-features = df.iloc[:,:-1]
-target = df.iloc[:,-1]
+def main():
+    df = pd.read_csv('csv_files/weather.csv')
+    # @Author: Sophia Cheto
+    # Map categorical values to discrete values
+    play_mapping = {'yes': 1, 'no': 0}
+    sunny_mapping = {'sunny': 1, 'rainy': 0, 'overcast': 0}
+    rainy_mapping = {'sunny': 0, 'rainy': 1, 'overcast': 0}
+    overcast_mapping = {'sunny': 0, 'rainy': 0, 'overcast': 1}
+    windy_mapping = {True: 1, False: 0}
 
-# Separa 30% das linhas do csv pra teste da arvore dps q ela estiver treinada, e 70% pra treino da arvore. 
-# Separa os 70% de treino em 2 dataframes, um só com a ultima coluna e outra com o resto
-# Normalmente X -> Atributos que usamos pra prever y, y -> o atributo que queremos prever 
-X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=0.3, random_state=0)
+    df['Windy'] = df['Windy'].map(windy_mapping)
+    df['Play'] = df['Play'].map(play_mapping)
+    df['Rainy'] = df['Weather'].map(rainy_mapping)
+    df['Sunny'] = df['Weather'].map(sunny_mapping)
+    df['Overcast'] = df['Weather'].map(overcast_mapping)
+    df.drop(df.columns[0], axis=1, inplace=True)
+    df.drop(df.columns[0], axis=1, inplace=True)
+
+    # Separate features and target variable
+    features = df.iloc[:, :-1]
+    target = df.iloc[:, -1]
+   
+
+    # dt = DecisionTreeModel(min_samples_split=2, max_depth=4, criterium='gini')
+    dt = DecisionTreeSKLearn(min_samples_split=2, max_depth=4, criterion='gini')
+
+    # Perform Leave-One-Out Cross-Validation (LOOCV)
+    loo = LeaveOneOut()
+    accuracies = []
+
+    for train_index, test_index in loo.split(features):
+        X_train, X_test = features.iloc[train_index], features.iloc[test_index]
+        y_train, y_test = target.iloc[train_index], target.iloc[test_index]
+        
+        dt.fit(X_train, y_train)
+        y_pred = dt.predict(X_test)
+        accuracies.append(accuracy_score(y_test, y_pred))
+        # dt.TreePrinter()
+
+    print(accuracies)
+    mean_accuracy = np.mean(accuracies)
+    print("Mean Accuracy Model:", mean_accuracy)
 
 
-# Cria uma árvore de decisão e treina ela começando pela função fit. Passamos os dados de treino
-dt = DecisionTreeClassifier(min_samples_split=1, max_depth=10)
-dt.fit(X_train,y_train)
-
-# model_Y = dt.predict(X_test)
-# dt.print_tree()
-
-dt.TreePrinter()
-
+if __name__ == "__main__":
+    main()
