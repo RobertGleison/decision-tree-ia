@@ -33,8 +33,8 @@ class DecisionTreeClassifier:
         max_info_gain = -float("inf")
 
         for feature_index in range(num_features):
-            feature_name = dataset.columns[feature_index]
-            feature_values = dataset.iloc[:, feature_index]
+            feature_name = dataset.columns[feature_index]       # nome da coluna do q está sendo avaliado
+            feature_values = dataset.iloc[:, feature_index]     # valores existentes nessa coluna
             possible_thresholds = pd.unique(feature_values)
             for threshold in possible_thresholds:
                 dataset_left, dataset_right = self.split(dataset, feature_name, threshold)
