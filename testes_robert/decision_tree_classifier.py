@@ -64,13 +64,14 @@ class DecisionTreeClassifier:
             feature_name = dataset.columns[feature_index]       
             feature_values = dataset.iloc[:, feature_index]    
             attr_type = self.get_attr_type(dataset, feature_name)
-            
+
+            if attr_type == 'multiclass_discrete': children, info_gain = self.multiclass_discrete_split(dataset, feature_index, feature_values, y)
+
             for value in pd.unique(feature_values):
-                if attr_type == 'binary_discrete': children, info_gain = self.binary_discrete_split(dataset, feature_index, value)
-                elif attr_type == 'multiclass_discrete': children, info_gain = self.multiclass_discrete_split(dataset, feature_index, value)
-                else: children, info_gain = self.continuous_split(dataset, feature_index, value, y)
+                if attr_type == 'binary_discrete': children, info_gain = self.binary_discrete_split(dataset, feature_index, value, y)
+                if attr_type == 'continuous': children, info_gain = self.multiclass_discrete_split(dataset, feature_index, value, y)
+
                 if children is None: continue
-            
                 if info_gain>max_info_gain:
                     best_split["feature_index"] = feature_index
                     best_split["feature_name"] = feature_name
@@ -79,78 +80,63 @@ class DecisionTreeClassifier:
                     best_split["info_gain"] = info_gain
                     max_info_gain = info_gain   
         return best_split
+    
+
+
+    def get_attr_type(self, dataset, feature_name): 
+        pass
 
 
 
-    def binary_discrete_split(self, dataset, feature_index, threshold, y_parent):
-        children = []
+    def continuous_split(self, dataset, feature_index, threshold, y_parent):
         left = dataset[dataset[feature_index] <= {threshold}]
         right = dataset[dataset[feature_index] > {threshold}]
+        children = [left, right]
         info_gain = self.binary_info_gain(y_parent, left.iloc[:,-1], right.iloc[:,-1])
-        children.append(left)
-        children.append(right)
         return children, info_gain
     
 
 
-    def multiclass_discrete_split(self, dataset, feature_index, feature_values, y):
+    def binary_discrete_split(self, dataset:DataFrame, feature_index:str, value:any, y_parent):
+        left = dataset[dataset[feature_index] == {value}]
+        right = dataset[dataset[feature_index] != {value}]
+        children = [left, right]
+        info_gain = self.binary_info_gain(y_parent, left.iloc[:,-1], right.iloc[:,-1])
+        return children, info_gain
+
+
+
+    def multiclass_discrete_split(self, dataset, feature_index, values, y_parent):
+        labels = pd.unique(values)
         children = []
-        for value in feature_values:
-            df_children = dataset.query(f"{feature_name} == {value}")
-            children.append(df_children)
-            curr_info_gain = self.information_gain(y, df_children)
-        return None, children
-    
+        for label in labels:
+            child_dataset = dataset[dataset[feature_index] == label]
+            children.append(child_dataset)
+        info_gain = self.info_gain_multiclass(y_parent, children)
+        return children, info_gain
 
-
-    def continuous_split(self, dataset:DataFrame, feature_name:str, threshold:any) -> tuple[DataFrame, DataFrame]:
-        '''Get a split for a node based on a row and column'''
-        X,y = dataset.iloc[:,:-1], dataset.iloc[:,-1]
-
-        for attribute in X.shape[1]:
-            attr_values = dataset.iloc[:, ]
-            attribute.nunique
-        dataset_left = dataset.query(f"{feature_name} <= {threshold}")
-        dataset_right = dataset.query(f"{feature_name} > {threshold}")
-        return dataset_left, dataset_right
-    
-
-
-    def binary_info_gain(self, y_parent:Series, y_left:Series, y_right:Series) -> float:
-        '''Get the information gain for a node'''
-        weight_left = len(y_left) / len(y_parent)
-        weight_right = len(y_right) / len(y_parent)
-        if self.criterium=="gini":
-            gain = self.gini_index(y_parent) - (weight_left*self.gini_index(y_left) + weight_right*self.gini_index(y_right))
-        else:
-            gain = self.entropy(y_parent) - (weight_left*self.entropy(y_left) + weight_right*self.entropy(y_right))
-        return gain
-    
 
 
     def info_gain_multiclass(self, y_parent:Series, children, y_parent_index) -> float:
         '''Get the information gain for a node'''
-        entropies = []
+        children_impurity_sum = 0
         for child in children:
-            y_child = child.iloc[:,y_parent_index]
-            child_weight = len(child) / len(y_parent)
-            if self.criterium=="gini":
-                intern_entropy = child_weight*self.gini_index(y_child)
-            else:
-                intern_entropy = child_weight*self.entropy(y_child)
-            entropies.append(intern_entropy)
-        if self.criterium=="gini":
-            return  self.gini_index(y_parent) - sum(entropies)
-        return self.entropy(y_parent) - sum(entropies)
-    
+            children_impurity_sum += len(child) / len(y_parent) * self.get_impurity(child.iloc[:, y_parent_index])
+        return self.get_impurity(y_parent) - children_impurity_sum
+
+
+
+    def get_impurity(self, y):
+        return self.gini_index(y) if self.criterium=='gini' else self.entropy(y)
+
 
 
     def entropy(self, y:Series) -> float:
         '''Get the entropy value for a node'''
-        target_column = pd.unique(y)
+        class_labels = pd.unique(y)
         entropy = 0
-        for attribute in target_column:
-            p_cls = len(y[y == attribute]) / len(y)
+        for label in class_labels:
+            p_cls = len(y[y == label]) / len(y)
             entropy += -p_cls * np.log2(p_cls)
         return entropy
     
@@ -160,48 +146,61 @@ class DecisionTreeClassifier:
         '''Get the gini value for a node'''
         class_labels = pd.unique(y)
         gini = 0
-        for cls in class_labels:
-            p_cls = len(y[y == cls]) / len(y)
+        for label in class_labels:
+            p_cls = len(y[y == label]) / len(y)
             gini += p_cls**2
         return 1 - gini
 
 
 
-    def get_attr_type(self, dataset, feature_name):
-        unique_values = dataset[feature_name].nunique()
-        if unique_values == 2:
-            return 'binary discrete'  # Binary attribute
-        elif unique_values > 2:
-            return 'multiclass discrete'  # Multiclass attribute
+    def binary_info_gain(self, y_parent:Series, y_left:Series, y_right:Series) -> float:
+        '''Get the information gain for a node'''
+        weight_left = len(y_left) / len(y_parent)
+        weight_right = len(y_right) / len(y_parent)
+        return self.get_impurity(y_parent) - (weight_left*self.get_impurity(y_left) + weight_right*self.get_impurity(y_right))
+    
+
+
+    
+
+
+    
+
+
+
+
+
+    
+
+
+
+    
+
+
+   
+    
+
+
+    
+    def predict(self, X_test:DataFrame) -> list[any]:
+        predictions = list(map(lambda row: self.make_prediction(row, self.root_node), X_test.itertuples(index=False)))
+        return predictions
+
+
+
+    def make_prediction(self, csv_row: tuple, node:DTNode, X_test:DataFrame) -> any:
+        '''Predict prediction for each row in dataframe'''
+        if node.leaf_value is not None: return node.leaf_value
+        feature_val = csv_row.iloc[node.feature_index]
+        if self.get_attr_type(feature_val) == 'multiclass':
+            for value in X_test.iloc[:,node.feature_index]:
+                return self.make_prediction(csv_row, node.left_node, X_test)
         else:
-            return 'continuous'  # Continuous attribute
+            if feature_val==PRIMEIRO_VALOR
+                return self.make_prediction(csv_row, node.left_node, X_test)
+            return self.make_prediction(csv_row, node.right_node, X_test)
 
-    
-    # def predict(self, X_test:DataFrame) -> list[any]:
-    #     '''Predict results based on the trained tree and a new dataframe test'''
-    #     samples, _ = X_test.shape
-    #     predictions = []
-    #     for row_index in range(samples):
-    #         csv_row = X_test.iloc[row_index]
-    #         predictions.append(self.make_prediction(csv_row, self.root, X_test))
-    #     return predictions
-    
 
-    # def predict(self, X_test:DataFrame) -> list[any]:
-    #     predictions = list(map(lambda row: self.make_prediction(row, self.root_node), X_test.itertuples(index=False)))
-    #     return predictions
-
-    # def make_prediction(self, csv_row: tuple, node:DTNode, X_test:DataFrame) -> any:
-    #     '''Predict prediction for each row in dataframe'''
-    #     if node.leaf_value is not None: return node.leaf_value
-    #     feature_val = csv_row.iloc[node.feature_index]
-    #     if self.get_attr_type(feature_val) == 'multiclass':
-    #         for value in X_test.iloc[:,node.feature_index]:
-    #             return self.make_prediction(csv_row, node.left_node, X_test)
-    #     else:
-    #         if feature_val==PRIMEIRO_VALOR
-    #             return self.make_prediction(csv_row, node.left_node, X_test)
-    #         return self.make_prediction(csv_row, node.right_node, X_test)
     
 
     
