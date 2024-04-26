@@ -7,10 +7,10 @@ from pandas import DataFrame, Series
 
 class DecisionTreeClassifier:
     def __init__(self, max_depth: int = None, min_samples_split: int = None, criterium: str = 'entropy') -> None:
-        self.root:DTNode = None
-        self.max_depth:int = max_depth 
-        self.min_samples_split:int = min_samples_split 
-        self.criterium:int = criterium
+        self.root: DTNode = None
+        self.max_depth: int = max_depth 
+        self.min_samples_split: int = min_samples_split 
+        self.criterium: str = criterium
 
     
 
