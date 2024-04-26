@@ -2,6 +2,7 @@ from node import DTNode
 import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
+import random
 
 
 class DecisionTreeClassifier:
@@ -21,7 +22,7 @@ class DecisionTreeClassifier:
             return DTNode(leaf_value=self.calculate_leaf_value(y))
         
         best_split = self.get_best_split(dataset) 
-        if best_split["info_gain"]==0: return DTNode(leaf_value=self.calculate_leaf_value(y))
+        if best_split["info_gain"]==0: return DTNode(leaf_value=self.calculate_leaf_value(y)) # Ou é uma folha ou o split dividiu 50/50. Se o melhor split dividiu 50/50, é pq todos os splits possíveis são ou folhas ou dividem 50/50. Ambos os casos CREIO EU, NA MINHA CABEÇA, melhor retornar uma folha. No caso do 50/50, retorna um valor aleatorio.
 
         children = []
         for child in best_split["dataset_children"]:
@@ -129,10 +130,17 @@ class DecisionTreeClassifier:
         return 1 - gini
         
 
-    def calculate_leaf_value(self, y:Series) -> any:
+    # def calculate_leaf_value(self, y:Series) -> any:
+    #     '''Get the majority of results in a leaf node'''
+    #     list_y = list(y)
+    #     return max(set(list_y), key=list_y.count)
+    
+    def calculate_leaf_value(self, y: Series) -> any:
         '''Get the majority of results in a leaf node'''
         list_y = list(y)
-        return max(set(list_y), key=list_y.count)
+        max_count = max(list_y.count(item) for item in set(list_y)) # Máximo contador da lista
+        most_common_values = [item for item in set(list_y) if list_y.count(item) == max_count] # Cria lista com valores com contador máximo
+        return random.choice(most_common_values)
     
 
     def fit(self, X:DataFrame, y:Series) -> None:
