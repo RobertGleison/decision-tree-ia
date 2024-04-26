@@ -66,7 +66,9 @@ class DecisionTreeClassifier:
             values = dataset.iloc[:, feature_index]    
             attr_type = self.get_attr_type(dataset, feature_name)
 
-            if attr_type == 'multiclass_discrete': children, info_gain = self.multiclass_discrete_split(dataset, feature_index, values, y_train)
+            if attr_type == 'multiclass_discrete': 
+                children, info_gain = self.multiclass_discrete_split(dataset, feature_index, pd.unique(values), y_train)
+                continue
 
             for value in pd.unique(values):
                 if attr_type == 'binary_discrete': children, info_gain = self.binary_discrete_split(dataset, feature_index, value, y_train)
@@ -159,11 +161,11 @@ class DecisionTreeClassifier:
 
 
 
-    def binary_info_gain(self, y_parent: Series, y_left:Series, y_right:Series) -> float:
+    def binary_info_gain(self, y_parent: Series, y_left: Series, y_right: Series) -> float:
         '''Get the information gain for a node splitted by a binary or threshold value'''
         weight_left = len(y_left) / len(y_parent)
         weight_right = len(y_right) / len(y_parent)
-        return self.get_impurity(y_parent) - (weight_left*self.get_impurity(y_left) + weight_right*self.get_impurity(y_right))
+        return self.get_impurity(y_parent) - weight_left*self.get_impurity(y_left + weight_right*self.get_impurity(y_right))
     
 
 
