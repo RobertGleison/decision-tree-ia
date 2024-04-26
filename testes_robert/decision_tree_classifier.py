@@ -35,7 +35,7 @@ class DecisionTreeClassifier:
         children = []
         for child in best_split["dataset_children"]:
             children.append(self.build_tree(child), curr_depth+1)
-        return DTNode(best_split["feature_index"], best_split["feature_name"], best_split["threshold"], children, best_split["info_gain"])
+        return DTNode(feature_index=["feature_index"], feature_name=best_split["feature_name"], children=best_split["children"], info_gain=best_split["info_gain"], split_values=best_split["split_values"])
 
 
     
@@ -161,46 +161,29 @@ class DecisionTreeClassifier:
     
 
 
-    
-
-
-    
-
+    def predict(self, X_test: DataFrame) -> list:
+        return [self.make_prediction(row, self.root, X_test) for _, row in X_test.iterrows()]
 
 
 
-
-    
-
-
-
-    
-
-
-   
-    
-
-
-    
-    def predict(self, X_test:DataFrame) -> list[any]:
-        predictions = list(map(lambda row: self.make_prediction(row, self.root_node), X_test.itertuples(index=False)))
-        return predictions
-
-
-
-    def make_prediction(self, csv_row: tuple, node:DTNode, X_test:DataFrame) -> any:
+    def make_prediction(self, row: tuple, node:DTNode, X_test:DataFrame) -> any:
         '''Predict prediction for each row in dataframe'''
         if node.leaf_value is not None: return node.leaf_value
-        feature_val = csv_row.iloc[node.feature_index]
-        if self.get_attr_type(feature_val) == 'multiclass':
-            for value in X_test.iloc[:,node.feature_index]:
-                return self.make_prediction(csv_row, node.left_node, X_test)
-        else:
-            if feature_val==PRIMEIRO_VALOR
-                return self.make_prediction(csv_row, node.left_node, X_test)
-            return self.make_prediction(csv_row, node.right_node, X_test)
+        attr_type = self.get_attr_type(self, X_test, node.feature_name)
+        value = row.iloc[node.feature_index]
 
+        if attr_type == 'multiclass_discrete' or attr_type == 'binary_discrete': 
+            for i, node_value in enumerate(node.split_values):
+                if value == node_value:
+                    return self.make_prediction(row, node.children[i], X_test)  
 
+      
+        elif attr_type == 'continuous':
+            if value <= node.split_values[0]:
+                return self.make_prediction(row, node.children[0], X_test)  
+            return self.make_prediction(row, node.children[1], X_test)
+    
+        return None
     
 
     
