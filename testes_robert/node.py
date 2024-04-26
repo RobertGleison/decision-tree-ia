@@ -4,11 +4,7 @@ class DTNode:
         self.feature_name = feature_name      
         self.children = children
         self.info_gain = info_gain 
-
-        # se for binario
-        self.threshold = threshold  
-
-        ## se for folha:
+        self.split_values = []  
         self.leaf_value = leaf_value 
 
 

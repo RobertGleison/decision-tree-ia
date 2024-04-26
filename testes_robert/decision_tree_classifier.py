@@ -6,19 +6,27 @@ import random
 
 
 class DecisionTreeClassifier:
-    def __init__(self, max_depth:int=None, min_samples_split:int=None, criterium:str='entropy') -> None:
+    def __init__(self, max_depth:int = None, min_samples_split:int = None, criterium:str = 'entropy') -> None:
         self.root:DTNode = None
         self.max_depth:int = max_depth 
         self.min_samples_split:int = min_samples_split 
         self.criterium:int = criterium
 
+    
 
-    def build_tree(self, dataset:DataFrame, curr_depth:int=0) -> DTNode:
+    def fit(self, X:DataFrame, y:Series) -> None:
+        '''Fit the tree with a csv for trainning'''
+        dataset = pd.concat((X, y), axis=1)
+        self.root = self.build_tree(dataset)
+
+
+
+    def build_tree(self, dataset:DataFrame, curr_depth:int = 0) -> DTNode:
         '''Construct the Decision Tree from the root node''' 
         X, y = dataset.iloc[:,:-1], dataset.iloc[:,-1]
         num_samples = X.shape[0]
         
-        if num_samples<self.min_samples_split or curr_depth==self.max_depth or self.is_pure(y):
+        if num_samples<self.min_samples_split or curr_depth==self.max_depth or self.is_pure(y): # Usei um early return aq
             return DTNode(leaf_value=self.calculate_leaf_value(y))
         
         best_split = self.get_best_split(dataset) 
@@ -29,48 +37,63 @@ class DecisionTreeClassifier:
             children.append(self.build_tree(child), curr_depth+1)
         return DTNode(best_split["feature_index"], best_split["feature_name"], best_split["threshold"], children, best_split["info_gain"])
 
+
     
+    def calculate_leaf_value(self, y: Series) -> any: # Antes só funcionava pra folhas puras, agr funciona pra folhas 50/50 caso o info gain seja 0
+        '''Get the majority of results in a leaf node'''
+        list_y = list(y)
+        max_count = max(list_y.count(item) for item in set(list_y)) # Máximo contador da lista
+        most_common_values = [item for item in set(list_y) if list_y.count(item) == max_count] # Cria lista com valores com contador máximo
+        return random.choice(most_common_values)
+    
+
+
+    def is_pure(self, target_column:Series) -> bool:
+        return len(set(target_column)) == 1
+    
+
 
     def get_best_split(self, dataset:DataFrame) -> dict:
         '''Get the best split for a node'''
         best_split = {}
-        max_info_gain = -float("inf")
-        
-        for feature_index in dataset.shape[1]:
+        max_info_gain = 0
+        y = dataset.iloc[:, -1]
+        train_columns = dataset.shape[1] - 1 
+
+        for feature_index in range(train_columns):
             feature_name = dataset.columns[feature_index]       
             feature_values = dataset.iloc[:, feature_index]    
-            y = dataset.iloc[:, -1]
-            if self.get_attr_type(feature_index) == 'binary': 
-                split = self.binary_split(dataset, feature_name, feature_values, y)
-            else: 
-                split = self.multiclass_split(dataset, feature_name, feature_values, y)
-            if split is None: continue
-         
-           
-            curr_info_gain = self.information_gain(y, split[1])  # split: threshold + divisões de dataset geradas no split
-            if curr_info_gain>max_info_gain:
-                best_split["feature_index"] = feature_index
-                best_split["feature_name"] = feature_name
-                best_split["threshold"] = split[0]
-                best_split["dataset_children"] = split[1]
-                best_split["info_gain"] = curr_info_gain
-                max_info_gain = curr_info_gain    
+            attr_type = self.get_attr_type(dataset, feature_name)
+            
+            for value in pd.unique(feature_values):
+                if attr_type == 'binary_discrete': children, info_gain = self.binary_discrete_split(dataset, feature_index, value)
+                elif attr_type == 'multiclass_discrete': children, info_gain = self.multiclass_discrete_split(dataset, feature_index, value)
+                else: children, info_gain = self.continuous_split(dataset, feature_index, value, y)
+                if children is None: continue
+            
+                if info_gain>max_info_gain:
+                    best_split["feature_index"] = feature_index
+                    best_split["feature_name"] = feature_name
+                    best_split["split_values"] = value
+                    best_split["children"] = children
+                    best_split["info_gain"] = info_gain
+                    max_info_gain = info_gain   
         return best_split
 
-    def binary_split(self, dataset, feature_name, feature_values):
-        best_division = None
-        max_info_gain = -float("inf")
-        possible_thresholds = pd.unique(feature_values)
-        for threshold in possible_thresholds:
-            y = dataset.iloc[:, -1]
-            children = self.split(dataset, feature_name, threshold) 
-            curr_info_gain = self.information_gain(y, children)
-            if curr_info_gain>max_info_gain:
-                best_division = children
-                max_info_gain = curr_info_gain
-        return max_info_gain, best_division
+
+
+    def binary_discrete_split(self, dataset, feature_index, threshold, y_parent):
+        children = []
+        left = dataset[dataset[feature_index] <= {threshold}]
+        right = dataset[dataset[feature_index] > {threshold}]
+        info_gain = self.binary_info_gain(y_parent, left.iloc[:,-1], right.iloc[:,-1])
+        children.append(left)
+        children.append(right)
+        return children, info_gain
     
-    def multiclass_split(self, dataset, feature_name, feature_values, y):
+
+
+    def multiclass_discrete_split(self, dataset, feature_index, feature_values, y):
         children = []
         for value in feature_values:
             df_children = dataset.query(f"{feature_name} == {value}")
@@ -79,12 +102,21 @@ class DecisionTreeClassifier:
         return None, children
     
 
-    def is_pure(self, target_column:Series) -> bool:
-        target_column = set(target_column)
-        return len(target_column) == 1
+
+    def continuous_split(self, dataset:DataFrame, feature_name:str, threshold:any) -> tuple[DataFrame, DataFrame]:
+        '''Get a split for a node based on a row and column'''
+        X,y = dataset.iloc[:,:-1], dataset.iloc[:,-1]
+
+        for attribute in X.shape[1]:
+            attr_values = dataset.iloc[:, ]
+            attribute.nunique
+        dataset_left = dataset.query(f"{feature_name} <= {threshold}")
+        dataset_right = dataset.query(f"{feature_name} > {threshold}")
+        return dataset_left, dataset_right
+    
 
 
-    def info_gain_binary(self, y_parent:Series, y_left:Series, y_right:Series) -> float:
+    def binary_info_gain(self, y_parent:Series, y_left:Series, y_right:Series) -> float:
         '''Get the information gain for a node'''
         weight_left = len(y_left) / len(y_parent)
         weight_right = len(y_right) / len(y_parent)
@@ -94,6 +126,8 @@ class DecisionTreeClassifier:
             gain = self.entropy(y_parent) - (weight_left*self.entropy(y_left) + weight_right*self.entropy(y_right))
         return gain
     
+
+
     def info_gain_multiclass(self, y_parent:Series, children, y_parent_index) -> float:
         '''Get the information gain for a node'''
         entropies = []
@@ -110,6 +144,7 @@ class DecisionTreeClassifier:
         return self.entropy(y_parent) - sum(entropies)
     
 
+
     def entropy(self, y:Series) -> float:
         '''Get the entropy value for a node'''
         target_column = pd.unique(y)
@@ -120,6 +155,7 @@ class DecisionTreeClassifier:
         return entropy
     
 
+
     def gini_index(self, y:Series) -> float:
         '''Get the gini value for a node'''
         class_labels = pd.unique(y)
@@ -128,29 +164,18 @@ class DecisionTreeClassifier:
             p_cls = len(y[y == cls]) / len(y)
             gini += p_cls**2
         return 1 - gini
-        
 
-    # def calculate_leaf_value(self, y:Series) -> any:
-    #     '''Get the majority of results in a leaf node'''
-    #     list_y = list(y)
-    #     return max(set(list_y), key=list_y.count)
-    
-    def calculate_leaf_value(self, y: Series) -> any:
-        '''Get the majority of results in a leaf node'''
-        list_y = list(y)
-        max_count = max(list_y.count(item) for item in set(list_y)) # Máximo contador da lista
-        most_common_values = [item for item in set(list_y) if list_y.count(item) == max_count] # Cria lista com valores com contador máximo
-        return random.choice(most_common_values)
-    
 
-    def fit(self, X:DataFrame, y:Series) -> None:
-        '''Fit the tree with a csv for trainning'''
-        dataset = pd.concat((X, y), axis=1)
-        self.root = self.build_tree(dataset)
-    
 
-    def get_attr_type(value):
-        return 'multiclass'
+    def get_attr_type(self, dataset, feature_name):
+        unique_values = dataset[feature_name].nunique()
+        if unique_values == 2:
+            return 'binary discrete'  # Binary attribute
+        elif unique_values > 2:
+            return 'multiclass discrete'  # Multiclass attribute
+        else:
+            return 'continuous'  # Continuous attribute
+
     
     # def predict(self, X_test:DataFrame) -> list[any]:
     #     '''Predict results based on the trained tree and a new dataframe test'''
@@ -161,6 +186,10 @@ class DecisionTreeClassifier:
     #         predictions.append(self.make_prediction(csv_row, self.root, X_test))
     #     return predictions
     
+
+    # def predict(self, X_test:DataFrame) -> list[any]:
+    #     predictions = list(map(lambda row: self.make_prediction(row, self.root_node), X_test.itertuples(index=False)))
+    #     return predictions
 
     # def make_prediction(self, csv_row: tuple, node:DTNode, X_test:DataFrame) -> any:
     #     '''Predict prediction for each row in dataframe'''
