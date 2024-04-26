@@ -8,8 +8,17 @@ from sklearn.model_selection import train_test_split
 
 
 def main():
-    # Lê o csv
-    df = pd.read_csv('csv_files/restaurant.csv')
+    
+    try:
+        csv_path = str(input("Enter the path of the chosen CSV file: "))
+        df = pd.read_csv(csv_path)
+    except FileNotFoundError:
+        print("File not found. Please make sure you enter the correct file path.")
+    except Exception as e:
+        print("An error occurred:", e)
+
+
+    # df = pd.read_csv('csv_files/restaurant.csv')
     df.drop(['ID'], axis=1, inplace=True)
 
     # Separate features and target variable
