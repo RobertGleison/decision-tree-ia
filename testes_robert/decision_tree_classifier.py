@@ -76,7 +76,7 @@ class DecisionTreeClassifier:
 
             for value in pd.unique(values):
                 if attr_type == 'binary_discrete': children, info_gain = self._binary_discrete_split(dataset, feature_index, value, y_train)
-                if attr_type == 'continuous': children, info_gain = self._multiclass_discrete_split(dataset, feature_index, value, y_train)
+                if attr_type == 'continuous': children, info_gain = self._continuous_split(dataset, feature_index, value, y_train)
 
                 if children is None: continue
                 max_info_gain = self._update_best_split(best_split, info_gain, max_info_gain, attr_type, children, value, feature_name, feature_index)
@@ -99,7 +99,7 @@ class DecisionTreeClassifier:
 
     def _map_attr_types(self, dataset: DataFrame) -> None:
         for feature_name in dataset.columns:
-            if type(dataset.iloc[0][feature_name]) == int or type(dataset.iloc[0][feature_name]) == float: 
+            if type(dataset.iloc[0][feature_name]) == np.int64 or type(dataset.iloc[0][feature_name]) == np.float64: 
                 self._attr_types[feature_name] = 'continuous'
                 continue
             unique_values = pd.unique(dataset[feature_name])
@@ -217,7 +217,7 @@ class DecisionTreeClassifier:
             return self.make_prediction(row, node.children[1], X_test)
         
         elif node.split_type == 'continuous':
-            if value <= node.split_values[0]:
+            if value <= node.split_values:
                 return self.make_prediction(row, node.children[0], X_test)  
             return self.make_prediction(row, node.children[1], X_test)
 

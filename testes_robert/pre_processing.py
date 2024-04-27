@@ -4,40 +4,32 @@ from  decision_tree_classifier import DecisionTreeClassifier as DecisionTreeMode
 from sklearn.tree import DecisionTreeClassifier as DecisionTreeSKLearn
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import LeaveOneOut
+from sklearn.model_selection import KFold
 from sklearn.model_selection import train_test_split
 
 
 def main():
-    
-    # try:
-    #     csv_path = str(input("Enter the path of the chosen CSV file: "))
-    #     df = pd.read_csv(csv_path)
-    # except FileNotFoundError:
-    #     print("File not found. Please make sure you enter the correct file path.")
-    # except Exception as e:
-    #     print("An error occurred:", e)
+    csv_name = 'csv_files/iris.csv'
+    csv_name = 'csv_files/weather.csv'
+    csv_name = 'csv_files/restaurant.csv'
 
-
-    df = pd.read_csv('csv_files/restaurant.csv')
+    df = pd.read_csv(csv_name)
     df.drop(['ID'], axis=1, inplace=True)
 
     # Separate features and target variable
-    target = df['Class']
-    df.drop(['Class'], axis=1, inplace=True)
-    features = df
-  
-    
-    dt_model = DecisionTreeModel(min_samples_split=2, max_depth=4)
-    # dt_scikit = DecisionTreeSKLearn(min_samples_split=2, max_depth=4)
+    target = df.iloc[:,-1]
+    features = df.iloc[:,:-1]
+    dt_model = DecisionTreeModel(min_samples_split=2, max_depth=7)
+   
+    if csv_name == 'csv_files/iris.csv':
+        accuracies = k_fold_cross_validation(dt_model, target, features)
+    accuracies = leave_one_out_cross_validation(dt_model, target, features)
 
-    ## escolher entre cross validation ou fazer um só predict
-    # cross_validation(dt, target, features) 
-    cross_validation(dt_model, target, features, 'dt_model')
-    # cross_validation(dt_scikit, target, features, 'dt_scikit')
+    mean_accuracy = np.mean(accuracies)
+    print(f"Mean Accuracy:", mean_accuracy)
 
     
-def cross_validation(dt, target, features, model):
-    # Perform Leave-One-Out Cross-Validation (LOOCV)
+def leave_one_out_cross_validation(dt, target, features):
     loo = LeaveOneOut()
     accuracies = []
 
@@ -48,11 +40,22 @@ def cross_validation(dt, target, features, model):
         dt.fit(X_train, y_train)
         y_pred = dt.predict(X_test)
         accuracies.append(accuracy_score(y_test, y_pred))
+    return accuracies
 
 
-    print(accuracies)
-    mean_accuracy = np.mean(accuracies)
-    print(f"Mean Accuracy {model}:", mean_accuracy)
+def k_fold_cross_validation(dt, target, features):
+    kf = KFold(n_splits=10)
+    accuracies = []
+
+    for train_index, test_index in kf.split(features):
+        X_train, X_test = features[train_index], features[test_index]
+        y_train, y_test = target[train_index], target[test_index]
+
+        dt.fit(X_train, y_train)
+        y_pred = dt.predict(X_test)
+        accuracies.append(accuracy_score(y_test, y_pred))
+    return accuracies
+        
 
 
 def accuracy_score(y_test, y_pred):
