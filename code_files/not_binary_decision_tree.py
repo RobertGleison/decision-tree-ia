@@ -32,7 +32,7 @@ class DecisionTreeClassifier:
         '''Get the best split for a node'''
         best_split = {}
         max_info_gain = -float("inf")
-
+        #Adicionado comentário pra branch teste
         for feature_index in range(num_features):
             feature_name = dataset.columns[feature_index]       # nome da coluna do q está sendo avaliado
             feature_values = dataset.iloc[:, feature_index]     # valores existentes nessa coluna
@@ -41,7 +41,7 @@ class DecisionTreeClassifier:
             else: 
                 split = self.split_discreto(dataset, feature_name, feature_values)
             if split is None: continue
-
+         
             y = dataset.iloc[:, -1]
             curr_info_gain = self.information_gain(y, split[1])  # split: threshold + divisões de dataset geradas no split
             if curr_info_gain>max_info_gain:

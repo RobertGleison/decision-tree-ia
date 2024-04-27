@@ -26,7 +26,7 @@ class DecisionTreeClassifier:
             
         return DTNode(leaf_value=self.calculate_leaf_value(y))
     
-
+    
     def get_best_split(self, dataset:DataFrame, num_features:int) -> dict:
         '''Get the best split for a node'''
         best_split = {}
@@ -55,6 +55,7 @@ class DecisionTreeClassifier:
 
     def split(self, dataset:DataFrame, feature_name:str, threshold:any) -> tuple[DataFrame, DataFrame]:
         '''Get a split for a node based on a row and column'''
+        #Isso é menos eficiente
         dataset_left = dataset.query(f"{feature_name} <= {threshold}")
         dataset_right = dataset.query(f"{feature_name} > {threshold}")
         return dataset_left, dataset_right

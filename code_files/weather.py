@@ -29,7 +29,7 @@ def main():
     target = df.iloc[:, -1]
    
 
-    dt = DecisionTreeModel(min_samples_split=2, max_depth=4)
+    dt = DecisionTreeModel(min_samples_split=2, max_depth=4, criterium='gini')
     # dt = DecisionTreeSKLearn(min_samples_split=2, max_depth=4, criterion='gini')
 
 
@@ -50,7 +50,7 @@ def cross_validation(dt, target, features):
         dt.fit(X_train, y_train)
         y_pred = dt.predict(X_test)
         accuracies.append(accuracy_score(y_test, y_pred))
-        dt.TreePrinter()
+        # dt.TreePrinter()
         print()
 
     print(accuracies)
@@ -65,7 +65,7 @@ def teste(dt, target, features):
         X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=0.3, random_state=i)
 
         dt.fit(X_train, y_train)
-        dt.TreePrinter()
+        # dt.TreePrinter()
 
         y_pred = dt.predict(X_test)
         print(accuracy_score(y_test, y_pred))
