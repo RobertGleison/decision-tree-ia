@@ -69,15 +69,13 @@ class DecisionTreeClassifier:
             values = dataset.iloc[:, feature_index]    
             attr_type = self._get_attr_type(feature_name)
 
-            if attr_type == 'multiclass_discrete': 
-                children, info_gain = self._multiclass_discrete_split(dataset, feature_index, pd.unique(values), y_train)
+            if attr_type == 'discrete': 
+                children, info_gain = self._discrete_split(dataset, feature_index, pd.unique(values), y_train)
                 max_info_gain = self._update_best_split(best_split, info_gain, max_info_gain, attr_type, children, pd.unique(values), feature_name, feature_index)
                 continue
 
             for value in pd.unique(values):
-                if attr_type == 'binary_discrete': children, info_gain = self._binary_discrete_split(dataset, feature_index, value, y_train)
                 if attr_type == 'continuous': children, info_gain = self._continuous_split(dataset, feature_index, value, y_train)
-
                 if children is None: continue
                 max_info_gain = self._update_best_split(best_split, info_gain, max_info_gain, attr_type, children, value, feature_name, feature_index)
         return best_split
@@ -102,11 +100,7 @@ class DecisionTreeClassifier:
             if type(dataset.iloc[0][feature_name]) == np.int64 or type(dataset.iloc[0][feature_name]) == np.float64: 
                 self._attr_types[feature_name] = 'continuous'
                 continue
-            unique_values = pd.unique(dataset[feature_name])
-            if len(unique_values) > 2: 
-                self._attr_types[feature_name] = 'multiclass_discrete'
-                continue
-            self._attr_types[feature_name] = 'binary_discrete'
+            self._attr_types[feature_name] = 'discrete'
 
 
 
@@ -120,34 +114,24 @@ class DecisionTreeClassifier:
         left = dataset[dataset.iloc[:, feature_index] <= threshold]
         right = dataset[dataset.iloc[:, feature_index] > threshold]
         children = [left, right]
-        info_gain = self._binary_info_gain(y_parent, left.iloc[:,-1], right.iloc[:,-1])
+        info_gain = self._continuous_info_gain(y_parent, left.iloc[:,-1], right.iloc[:,-1])
         return children, info_gain
     
 
 
-    def _binary_discrete_split(self, dataset: DataFrame, feature_index: int, value: any, y_parent: Series) -> tuple[list, float]:
-        '''Split the DataFrame with a discrete and binary value'''
-        left = dataset[dataset.iloc[:, feature_index] == value]
-        right = dataset[dataset.iloc[:, feature_index] != value]
-        children = [left, right]
-        info_gain = self._binary_info_gain(y_parent, left.iloc[:,-1], right.iloc[:,-1])
-        return children, info_gain
-
-
-
-    def _multiclass_discrete_split(self, dataset: DataFrame, feature_index: int, values: Series, y_parent: Series) -> tuple[list, float]:
+    def _discrete_split(self, dataset: DataFrame, feature_index: int, values: Series, y_parent: Series) -> tuple[list, float]:
         '''Split the DataFrame with a discrete and multiclass value'''
         labels = pd.unique(values)
         children = []
         for label in labels:
             child_dataset = dataset[dataset.iloc[:, feature_index] == label]
             children.append(child_dataset)
-        info_gain = self._info_gain_multiclass(y_parent, children)
+        info_gain = self._discrete_info_gain(y_parent, children)
         return children, info_gain
 
 
 
-    def _info_gain_multiclass(self, y_parent: Series, children: list) -> float:
+    def _discrete_info_gain(self, y_parent: Series, children: list) -> float:
         '''Get the information gain for a node splitted by a multiclass discrete value'''
         children_impurity_sum = 0
         for child in children:
@@ -184,7 +168,7 @@ class DecisionTreeClassifier:
 
 
 
-    def _binary_info_gain(self, y_parent: Series, y_left: Series, y_right: Series) -> float:
+    def _continuous_info_gain(self, y_parent: Series, y_left: Series, y_right: Series) -> float:
         '''Get the information gain for a node splitted by a binary or threshold value'''
         weight_left = len(y_left) / len(y_parent)
         weight_right = len(y_right) / len(y_parent)
@@ -206,15 +190,10 @@ class DecisionTreeClassifier:
         value = row[node.feature_index] 
         attribute = node.feature_name
 
-        if node.split_type == 'multiclass_discrete': 
+        if node.split_type == 'discrete': 
             for i, node_value in enumerate(node.split_values):
                 if value == node_value:
                     return self.make_prediction(row, node.children[i], X_test)  
-
-        elif node.split_type == 'binary_discrete':
-            if value == node.split_values[0]:
-                return self.make_prediction(row, node.children[0], X_test)  
-            return self.make_prediction(row, node.children[1], X_test)
         
         elif node.split_type == 'continuous':
             if value <= node.split_values:

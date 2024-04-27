@@ -10,8 +10,8 @@ from sklearn.model_selection import train_test_split
 
 def main():
     csv_name = 'csv_files/iris.csv'
-    csv_name = 'csv_files/weather.csv'
-    csv_name = 'csv_files/restaurant.csv'
+    # csv_name = 'csv_files/weather.csv'
+    # csv_name = 'csv_files/restaurant.csv'
 
     df = pd.read_csv(csv_name)
     df.drop(['ID'], axis=1, inplace=True)
@@ -25,7 +25,7 @@ def main():
         accuracies = k_fold_cross_validation(dt_model, target, features)
     accuracies = leave_one_out_cross_validation(dt_model, target, features)
 
-    mean_accuracy = np.mean(accuracies)
+    mean_accuracy = sum(accuracies)/len(accuracies)
     print(f"Mean Accuracy:", mean_accuracy)
 
     
@@ -48,8 +48,8 @@ def k_fold_cross_validation(dt, target, features):
     accuracies = []
 
     for train_index, test_index in kf.split(features):
-        X_train, X_test = features[train_index], features[test_index]
-        y_train, y_test = target[train_index], target[test_index]
+        X_train, X_test = features.iloc[train_index], features.iloc[test_index]
+        y_train, y_test = target.iloc[train_index], target.iloc[test_index]
 
         dt.fit(X_train, y_train)
         y_pred = dt.predict(X_test)
