@@ -36,7 +36,7 @@ class DecisionTreeClassifier:
         children = []
         for child in best_split["children"]:
             children.append(self.build_tree(child, curr_depth+1))
-        return DTNode(feature_index=["feature_index"], feature_name=best_split["feature_name"], children=best_split["children"], info_gain=best_split["info_gain"], split_values=best_split["split_values"])
+        return DTNode(best_split["feature_index"], best_split["feature_name"], children, best_split["info_gain"], best_split["split_values"], best_split["split_type"])
 
 
     
@@ -69,7 +69,7 @@ class DecisionTreeClassifier:
 
             if attr_type == 'multiclass_discrete': 
                 children, info_gain = self.multiclass_discrete_split(dataset, feature_index, pd.unique(values), y_train)
-                max_info_gain = self.update_best_split(best_split, info_gain, max_info_gain, children, values, feature_name, feature_index)
+                max_info_gain = self.update_best_split(best_split, info_gain, max_info_gain, attr_type, children, pd.unique(values), feature_name, feature_index)
                 continue
 
             for value in pd.unique(values):
@@ -77,16 +77,17 @@ class DecisionTreeClassifier:
                 if attr_type == 'continuous': children, info_gain = self.multiclass_discrete_split(dataset, feature_index, value, y_train)
 
                 if children is None: continue
-                max_info_gain = self.update_best_split(best_split, info_gain, max_info_gain, children, values, feature_name, feature_index)
+                max_info_gain = self.update_best_split(best_split, info_gain, max_info_gain, attr_type, children, value, feature_name, feature_index)
         return best_split
     
 
 
-    def update_best_split(self, best_split: dict, info_gain: float, max_info_gain: float, children: list, value: any, feature_name: str, feature_index: int) -> float:
+    def update_best_split(self, best_split: dict, info_gain: float, max_info_gain: float, split_type: str, children: list, value: any, feature_name: str, feature_index: int) -> float:
         if info_gain > max_info_gain:
             best_split["feature_index"] = feature_index
             best_split["feature_name"] = feature_name
             best_split["split_values"] = value
+            best_split["split_type"] = split_type
             best_split["children"] = children
             best_split["info_gain"] = info_gain
             return info_gain
@@ -189,15 +190,20 @@ class DecisionTreeClassifier:
         if node.leaf_value is not None: 
             return node.leaf_value
         
-        attr_type = self.get_attr_type(X_test, node.feature_name)
-        value = row[node.feature_index]  # Accessing the feature value from the row directly
+        value = row[node.feature_index] 
+        attribute = node.feature_name
 
-        if attr_type == 'multiclass_discrete' or attr_type == 'binary_discrete': 
+        if node.split_type == 'multiclass_discrete': 
             for i, node_value in enumerate(node.split_values):
                 if value == node_value:
                     return self.make_prediction(row, node.children[i], X_test)  
 
-        elif attr_type == 'continuous':
+        elif node.split_type == 'binary_discrete':
+            if value == node.split_values[0]:
+                return self.make_prediction(row, node.children[0], X_test)  
+            return self.make_prediction(row, node.children[1], X_test)
+        
+        elif node.split_type == 'continuous':
             if value <= node.split_values[0]:
                 return self.make_prediction(row, node.children[0], X_test)  
             return self.make_prediction(row, node.children[1], X_test)
