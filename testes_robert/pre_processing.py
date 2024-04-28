@@ -30,7 +30,7 @@ def main():
     if csv_name == 'csv_files/iris.csv':
         accuracies = k_fold_cross_validation(dt_model, target, features, 10)
     if csv_name == 'csv_files/restaurant.csv':
-        accuracies = k_fold_cross_validation(dt_model, target, features, 3)
+        accuracies = k_fold_cross_validation(dt_model, target, features, 10)
     if csv_name == 'csv_files/weather.csv':
         accuracies = leave_one_out_cross_validation(dt_model, target, features)
 
@@ -39,7 +39,7 @@ def main():
     print(f"Mean Accuracy:", mean_accuracy)
 
     
-    
+
 def leave_one_out_cross_validation(dt, target, features):
     loo = LeaveOneOut()
     accuracies = []
@@ -53,7 +53,7 @@ def leave_one_out_cross_validation(dt, target, features):
         y_pred = dt.predict(X_test)
         predictions.append(y_pred)
         accuracies.append(accuracy_score(y_test, y_pred)) 
-        make_dot_representation(dt, features, target)
+    make_dot_representation(dt, features, target)
     return accuracies
 
 
@@ -69,6 +69,7 @@ def k_fold_cross_validation(dt, target, features, n_test):
         dt.fit(X_train, y_train)
         y_pred = dt.predict(X_test)
         accuracies.append(accuracy_score(y_test, y_pred))
+    make_dot_representation(dt, features, target)
     return accuracies
     
 
