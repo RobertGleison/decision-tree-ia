@@ -9,8 +9,8 @@ from sklearn.model_selection import train_test_split
 
 
 def main():
-    csv_name = 'csv_files/iris.csv'
-    # csv_name = 'csv_files/weather.csv'
+    # csv_name = 'csv_files/iris.csv'
+    csv_name = 'csv_files/weather.csv'
     # csv_name = 'csv_files/restaurant.csv'
 
     df = pd.read_csv(csv_name)
