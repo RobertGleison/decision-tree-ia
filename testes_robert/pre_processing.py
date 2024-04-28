@@ -1,64 +1,87 @@
-import pandas as pd
-import numpy as np
-import os
 from  decision_tree_classifier import DecisionTreeClassifier as DecisionTreeModel
-from sklearn.tree import DecisionTreeClassifier as DecisionTreeSKLearn
-from sklearn.metrics import accuracy_score
 from sklearn.model_selection import LeaveOneOut
 from sklearn.model_selection import KFold
-from sklearn.model_selection import train_test_split
-from sklearn.tree import export_graphviz
-from IPython.display import display
-from graphviz import Source
-import pydotplus
 from IPython.display import Image  
+import pandas as pd
+import numpy as np
+import pydotplus
+import os
+
+
+
+IRIS_CSV = 'csv_files/iris.csv'
+RESTAURANT_CSV = 'csv_files/restaurant.csv'
+WEATHER_CSV = 'csv_files/weather.csv'
+
 
 
 def main():
-    # csv_name = 'csv_files/iris.csv'
-    # csv_name = 'csv_files/weather.csv'
-    csv_name = 'csv_files/restaurant.csv'
-
-    df = pd.read_csv(csv_name)
+    chose_csv, samples, depth, criterium = _print_options()
+    df = pd.read_csv(chose_csv)
     df.drop(['ID'], axis=1, inplace=True)
 
-    # Separate features and target variable
     target = df.iloc[:,-1]
     features = df.iloc[:,:-1]
-    dt_model = DecisionTreeModel(min_samples_split=2, max_depth=5)
+    dt_model = DecisionTreeModel(min_samples_split=samples, max_depth=depth, criterium=criterium)
    
-    if csv_name == 'csv_files/iris.csv':
-        accuracies = k_fold_cross_validation(dt_model, target, features, 10)
-    if csv_name == 'csv_files/restaurant.csv':
-        accuracies = k_fold_cross_validation(dt_model, target, features, 10)
-    if csv_name == 'csv_files/weather.csv':
-        accuracies = leave_one_out_cross_validation(dt_model, target, features)
-
+    if chose_csv == IRIS_CSV:
+        accuracies, test_size = _k_fold_cross_validation(dt_model, target, features, 10)
+    if chose_csv == RESTAURANT_CSV:
+        accuracies, test_size = _k_fold_cross_validation(dt_model, target, features, 10)
+    if chose_csv == WEATHER_CSV:
+        accuracies, test_size = _leave_one_out_cross_validation(dt_model, target, features)
     
     mean_accuracy = sum(accuracies)/len(accuracies)
-    print(f"Mean Accuracy:", mean_accuracy)
+    _print_statistics(mean_accuracy, test_size, features, chose_csv)
 
+
+
+def _print_statistics(mean_accuracy, test_size, features, chose_csv):
+    print(f"\nModel test size: {test_size} rows")
+    print(f"Model test size: {features.shape[0] - test_size} rows")
+    print(f"Model accuracy: {(mean_accuracy * 100):.2f}%" )
+    if chose_csv == WEATHER_CSV: print(f"Cross validation type: Leave One Out")
+    else: print(f"Cross validation type: K-Fold")
+
+
+
+def _print_options():
+    csvs = {1: 'csv_files/iris.csv',
+            2: 'csv_files/restaurant.csv',
+            3: 'csv_files/weather.csv'}
+    try:
+        print("Choose the dataset to train the Decision Tree:"
+                "\n1 - Iris.csv\n"
+                "2 - Restaurant.csv\n"
+                "3 - Weather.csv\n")
+        chose_csv = int(input("Dataset escolhido: "))
+        samples = int(input("Escolha um número mínimo de linhas para split: "))
+        depth = int(input("Escolha a profundidade máxima da Decision Tree: "))
+        criterium = input("Escolha o critério de decisão de atributos ('gini' ou 'entropy'): ")
+        return csvs[chose_csv], samples, depth, criterium
     
+    except: 
+        os.system('clear')
+        print("Enter a valid option for dataset")
+        _print_options()
 
-def leave_one_out_cross_validation(dt, target, features):
+
+
+def _leave_one_out_cross_validation(dt, target, features):
     loo = LeaveOneOut()
     accuracies = []
-    predictions = []
-    count = 0
     for train_index, test_index in loo.split(features):
         X_train, X_test = features.iloc[train_index], features.iloc[test_index]
         y_train, y_test = target.iloc[train_index], target.iloc[test_index]
         dt.fit(X_train, y_train)
-        count+=1
         y_pred = dt.predict(X_test)
-        predictions.append(y_pred)
-        accuracies.append(accuracy_score(y_test, y_pred)) 
-    make_dot_representation(dt, features, target)
-    return accuracies
+        accuracies.append(_accuracy_score(y_test, y_pred)) 
+    _make_dot_representation(dt, features, target)
+    return accuracies, y_test.shape[0]
 
 
 
-def k_fold_cross_validation(dt, target, features, n_test):
+def _k_fold_cross_validation(dt, target, features, n_test):
     kf = KFold(n_splits=n_test)
     accuracies = []
 
@@ -68,13 +91,13 @@ def k_fold_cross_validation(dt, target, features, n_test):
 
         dt.fit(X_train, y_train)
         y_pred = dt.predict(X_test)
-        accuracies.append(accuracy_score(y_test, y_pred))
-    make_dot_representation(dt, features, target)
-    return accuracies
+        accuracies.append(_accuracy_score(y_test, y_pred))
+    _make_dot_representation(dt, features, target)
+    return accuracies, y_test.shape[0]
     
 
 
-def accuracy_score(y_test, y_pred):
+def _accuracy_score(y_test, y_pred):
     total_counter = 0
     right_predictions = 0
     for i in range(len(y_test)):
@@ -84,16 +107,16 @@ def accuracy_score(y_test, y_pred):
 
 
 
-def make_dot_representation(dt, features, target) -> None:
+def _make_dot_representation(dt, features, target) -> None:
     dot_data = "digraph Tree {\nnode [shape=box] ;\n"
     dot_data += _build_dot_node(dt.root)
     dot_data += "}"
-    print("Current working directory:", os.getcwd())
     png_file_path = os.path.join(os.getcwd(), 'decision_tree.png')
-    print("PNG file path:", png_file_path)
     graph = pydotplus.graph_from_dot_data(dot_data)  
     graph.write_png('graph.png')
     Image(graph.create_png())
+
+
 
 def _build_dot_node(node) -> str:
     dot_data = ""
