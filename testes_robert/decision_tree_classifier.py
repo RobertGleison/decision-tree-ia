@@ -114,7 +114,7 @@ class DecisionTreeClassifier:
         left = dataset[dataset.iloc[:, feature_index] <= threshold]
         right = dataset[dataset.iloc[:, feature_index] > threshold]
         children = [left, right]
-        info_gain = self._continuous_info_gain(dataset, left, right)
+        info_gain = self._continuous_info_gain(dataset, left, right, y_parent)
         return children, info_gain
     
 
@@ -126,27 +126,27 @@ class DecisionTreeClassifier:
         for label in labels:
             child_dataset = dataset[dataset.iloc[:, feature_index] == label]
             children.append(child_dataset)
-        info_gain = self._discrete_info_gain(dataset, children)
+        info_gain = self._discrete_info_gain(dataset, children, y_parent)
         return children, info_gain
 
 
 
-    def _continuous_info_gain(self, parent_dataset: DataFrame, right_dataset: DataFrame, left_dataset: DataFrame) -> float:
+    def _continuous_info_gain(self, parent_dataset: DataFrame, right_dataset: DataFrame, left_dataset: DataFrame, y_parent: Series) -> float:
         '''Get the information gain for a node splitted by a binary or threshold value'''
         left_rate = left_dataset.shape[0] / parent_dataset.shape[0]
         right_rate = right_dataset.shape[0] / parent_dataset.shape[0]
         # return self._get_impurity(parent_dataset.iloc[:,-1]) - left_rate*self._get_impurity(left_dataset.iloc[:,-1]) + right_rate*self._get_impurity(right_dataset.iloc[:,-1])
-        return 1 - (left_rate*self._get_impurity(left_dataset.iloc[:,-1]) + right_rate*self._get_impurity(right_dataset.iloc[:,-1]))
+        total_impurity = left_rate*self._get_impurity(left_dataset.iloc[:,-1]) + right_rate*self._get_impurity(right_dataset.iloc[:,-1])
+        return self._get_impurity(y_parent) - total_impurity
     
 
 
-    def _discrete_info_gain(self, parent_dataset: DataFrame, children: list) -> float:
+    def _discrete_info_gain(self, parent_dataset: DataFrame,children: list, y_parent: Series) -> float:
         '''Get the information gain for a node splitted by a multiclass discrete value'''
         children_impurity_sum = 0
         for child_dataset in children:
             children_impurity_sum += child_dataset.shape[0] / parent_dataset.shape[0] * self._get_impurity(child_dataset.iloc[:, -1])
-        return 1 - children_impurity_sum
-        # return self._get_impurity(y_parent) - children_impurity_sum
+        return self._get_impurity(y_parent) - children_impurity_sum
 
 
 

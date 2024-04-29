@@ -1,7 +1,9 @@
 from  decision_tree_classifier import DecisionTreeClassifier as DecisionTreeModel
 from sklearn.model_selection import LeaveOneOut
 from sklearn.model_selection import KFold
+from pandas import Series, DataFrame
 from IPython.display import Image  
+from node import DTNode
 import pandas as pd
 import numpy as np
 import pydotplus
@@ -15,8 +17,8 @@ WEATHER_CSV = 'csv_files/weather.csv'
 
 
 
-def main():
-    chose_csv, samples, depth, criterium = _print_options()
+def main() -> None:
+    chose_csv, samples, depth, criterium, folds = _print_options()
     df = pd.read_csv(chose_csv)
     df.drop(['ID'], axis=1, inplace=True)
 
@@ -25,9 +27,9 @@ def main():
     dt_model = DecisionTreeModel(min_samples_split=samples, max_depth=depth, criterium=criterium)
    
     if chose_csv == IRIS_CSV:
-        accuracies, test_size = _k_fold_cross_validation(dt_model, target, features, 10)
+        accuracies, test_size = _k_fold_cross_validation(dt_model, target, features, folds)
     if chose_csv == RESTAURANT_CSV:
-        accuracies, test_size = _k_fold_cross_validation(dt_model, target, features, 10)
+        accuracies, test_size = _k_fold_cross_validation(dt_model, target, features, folds)
     if chose_csv == WEATHER_CSV:
         accuracies, test_size = _leave_one_out_cross_validation(dt_model, target, features)
     
@@ -36,7 +38,7 @@ def main():
 
 
 
-def _print_statistics(mean_accuracy, test_size, features, chose_csv):
+def _print_statistics(mean_accuracy: float, test_size: int, features: Series, chose_csv: str) -> None:
     print(f"\nModel test size: {test_size} rows")
     print(f"Model test size: {features.shape[0] - test_size} rows")
     print(f"Model accuracy: {(mean_accuracy * 100):.2f}%" )
@@ -44,8 +46,8 @@ def _print_statistics(mean_accuracy, test_size, features, chose_csv):
     else: print(f"Cross validation type: K-Fold")
 
 
-
-def _print_options():
+# Melhorar execption handler
+def _print_options() -> None:
     csvs = {1: 'csv_files/iris.csv',
             2: 'csv_files/restaurant.csv',
             3: 'csv_files/weather.csv'}
@@ -55,10 +57,11 @@ def _print_options():
                 "2 - Restaurant.csv\n"
                 "3 - Weather.csv\n")
         chose_csv = int(input("Dataset escolhido: "))
-        samples = int(input("Escolha um número mínimo de linhas para split: "))
-        depth = int(input("Escolha a profundidade máxima da Decision Tree: "))
+        samples = int(input("Escolha um número mínimo de linhas para split (recomendado: 2-5): "))
+        depth = int(input("Escolha a profundidade máxima da Decision Tree (recomendado: 5-10): "))
         criterium = input("Escolha o critério de decisão de atributos ('gini' ou 'entropy'): ")
-        return csvs[chose_csv], samples, depth, criterium
+        folds = int(input("Escolha quantidade de divisões para treino (recomendado: 1,5 ou 10): "))
+        return csvs[chose_csv], samples, depth, criterium, folds
     
     except: 
         os.system('clear')
@@ -67,7 +70,7 @@ def _print_options():
 
 
 
-def _leave_one_out_cross_validation(dt, target, features):
+def _leave_one_out_cross_validation(dt: DataFrame, target: Series, features: DataFrame) -> tuple[list, int]:
     loo = LeaveOneOut()
     accuracies = []
     for train_index, test_index in loo.split(features):
@@ -81,7 +84,7 @@ def _leave_one_out_cross_validation(dt, target, features):
 
 
 
-def _k_fold_cross_validation(dt, target, features, n_test):
+def _k_fold_cross_validation(dt: DataFrame, target: Series, features: DataFrame, n_test: int =10)-> tuple[list, int]:
     kf = KFold(n_splits=n_test)
     accuracies = []
 
@@ -97,7 +100,7 @@ def _k_fold_cross_validation(dt, target, features, n_test):
     
 
 
-def _accuracy_score(y_test, y_pred):
+def _accuracy_score(y_test: Series, y_pred: Series) -> float:
     total_counter = 0
     right_predictions = 0
     for i in range(len(y_test)):
@@ -107,7 +110,7 @@ def _accuracy_score(y_test, y_pred):
 
 
 
-def _make_dot_representation(dt, features, target) -> None:
+def _make_dot_representation(dt: DataFrame, features: DataFrame, target: Series) -> None:
     dot_data = "digraph Tree {\nnode [shape=box] ;\n"
     dot_data += _build_dot_node(dt.root)
     dot_data += "}"
@@ -118,7 +121,7 @@ def _make_dot_representation(dt, features, target) -> None:
 
 
 
-def _build_dot_node(node) -> str:
+def _build_dot_node(node: DTNode) -> str:
     dot_data = ""
     if node.leaf_value is not None:
         dot_data += f"{id(node)} [label=\"{node.leaf_value}\"] ;\n"
