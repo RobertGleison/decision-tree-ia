@@ -36,7 +36,7 @@ def main() -> None:
 
     target = df.iloc[:,-1]
     features = df.iloc[:,:-1]
-    dt_model = DecisionTreeModel(min_samples_split=samples, max_depth=depth, criterium=criterium)
+    dt_model = DecisionTreeModel(min_samples_split=samples, max_depth=depth)
    
     if chose_csv == IRIS_CSV:
         accuracies, test_size = _k_fold_cross_validation(dt_model, target, features, 10)
@@ -47,6 +47,16 @@ def main() -> None:
     
     mean_accuracy = sum(accuracies)/len(accuracies)
     _print_statistics(mean_accuracy, test_size, features, chose_csv)
+
+
+    # TREE FOR PREDICTIONS
+    dt_total = DecisionTreeModel(min_samples_split=samples, max_depth=depth)
+    dt_total.fit(features, target)
+    colors = {key:value for (value, key) in zip(["#bad9d3", "#d4b4dd", "#fdd9d9"], pd.unique(target))}
+    _make_dot_representation(dt_total, colors)
+    
+    make_prediction(features, dt_total)
+
 
 
 
@@ -81,6 +91,19 @@ def _print_options() -> None:
         _print_options()
 
 
+def make_prediction(df, dt: DecisionTreeModel):
+    print("\n\n PREDICTION ---------")
+    features = list(df.columns)
+    X_test = []
+    for feature in features:
+        feature_value = input(feature + "? ")
+        X_test.append(feature_value)
+    
+    test = pd.DataFrame([X_test], columns=features)
+    result = dt.predict(test)[0]
+    print("\n PREDICTION: " + result)
+
+
 @timer
 def _leave_one_out_cross_validation(dt: DecisionTreeModel, target: Series, features: DataFrame) -> tuple[list, int]:
     loo = LeaveOneOut()
@@ -91,7 +114,7 @@ def _leave_one_out_cross_validation(dt: DecisionTreeModel, target: Series, featu
         dt.fit(X_train, y_train)
         y_pred = dt.predict(X_test)
         accuracies.append(_accuracy_score(y_test, y_pred)) 
-    _make_dot_representation(dt, features, target)
+    # _make_dot_representation(dt, features, target)
     return accuracies, y_test.shape[0]
 
 
@@ -107,7 +130,7 @@ def _k_fold_cross_validation(dt: DecisionTreeModel, target: Series, features: Da
         dt.fit(X_train, y_train)
         y_pred = dt.predict(X_test)
         accuracies.append(_accuracy_score(y_test, y_pred))
-    _make_dot_representation(dt, features, target)
+    # _make_dot_representation(dt, features, target)
     return accuracies, y_test.shape[0]
     
 
@@ -122,21 +145,23 @@ def _accuracy_score(y_test: Series, y_pred: Series) -> float:
 
 
 
-def _make_dot_representation(dt: DataFrame, features: DataFrame, target: Series) -> None:
-    dot_data = "digraph Tree {\nnode [shape=box] ;\n"
-    dot_data += _build_dot_node(dt.root)
+def _make_dot_representation(dt: DataFrame, colors) -> None:
+    dot_data = "digraph Tree {\nnode [shape=box, style=\"filled, rounded\"] ;\n"
+    dot_data += "edge [fontname=\"times\"] ;\n"
+    dot_data += _build_dot_node(dt.root, colors)
     dot_data += "}"
-    png_file_path = os.path.join(os.getcwd(), 'decision_tree.png')
+    # png_file_path = os.path.join(os.getcwd(), 'decision_tree.png')
     graph = pydotplus.graph_from_dot_data(dot_data)  
     graph.write_png('graph.png')
     Image(graph.create_png())
 
 
 
-def _build_dot_node(node: DTNode) -> str:
+def _build_dot_node(node: DTNode, colors) -> str:
     dot_data = ""
     if node.leaf_value is not None:
-        dot_data += f"{id(node)} [label=\"{node.leaf_value}\"] ;\n"
+        color = colors[node.leaf_value]
+        dot_data += f"{id(node)} [label=\"{node.leaf_value}\", fillcolor=\"{color}\"] ;\n"
     else:
         dot_data += f"{id(node)} [label=\"{node.feature_name}\"] ;\n"
         for i, child in enumerate(node.children):
@@ -144,7 +169,7 @@ def _build_dot_node(node: DTNode) -> str:
                 split_value = node.split_values[i]
             else: split_value = node.split_values
             dot_data += f"{id(node)} -> {id(child)} [label=\"{split_value}\"] ;\n"
-            dot_data += _build_dot_node(child)
+            dot_data += _build_dot_node(child, colors)
     return dot_data
 
 
