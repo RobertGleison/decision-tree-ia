@@ -41,8 +41,8 @@ def main() -> None:
     if chose_csv == IRIS_CSV:
         accuracies, test_size = _k_fold_cross_validation(dt_model, target, features, 10)
     if chose_csv == RESTAURANT_CSV:
-        accuracies, test_size = _k_fold_cross_validation(dt_model, target, features, 5)
-        # accuracies, test_size = _leave_one_out_cross_validation(dt_model, target, features)
+        # accuracies, test_size = _k_fold_cross_validation(dt_model, target, features, 5)
+        accuracies, test_size = _leave_one_out_cross_validation(dt_model, target, features)
     if chose_csv == WEATHER_CSV:
         accuracies, test_size = _leave_one_out_cross_validation(dt_model, target, features)
     
@@ -65,8 +65,8 @@ def _print_statistics(mean_accuracy: float, test_size: int, features: Series, ch
     print(f"Model test size: {test_size} rows")
     print(f"Model test size: {features.shape[0] - test_size} rows")
     print(f"Model accuracy: {(mean_accuracy * 100):.2f}%" )
-    if chose_csv == WEATHER_CSV: print(f"Cross validation type: Leave One Out")
-    else: print(f"Cross validation type: K-Fold")
+    if chose_csv == IRIS_CSV: print(f"Cross validation type: K-Fold")
+    else: print(f"Cross validation type: Leave One Out")
 
 
 # Melhorar execption handler
