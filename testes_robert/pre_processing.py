@@ -42,6 +42,7 @@ def main() -> None:
         accuracies, test_size = _k_fold_cross_validation(dt_model, target, features, 10)
     if chose_csv == RESTAURANT_CSV:
         accuracies, test_size = _k_fold_cross_validation(dt_model, target, features, 5)
+        # accuracies, test_size = _leave_one_out_cross_validation(dt_model, target, features)
     if chose_csv == WEATHER_CSV:
         accuracies, test_size = _leave_one_out_cross_validation(dt_model, target, features)
     
@@ -92,7 +93,7 @@ def _print_options() -> None:
 
 
 def make_prediction(df, dt: DecisionTreeModel):
-    print("\n\n PREDICTION ---------")
+    print("\n\nPREDICTION ---------")
     features = list(df.columns)
     X_test = []
     for feature in features:
@@ -101,7 +102,7 @@ def make_prediction(df, dt: DecisionTreeModel):
     
     test = pd.DataFrame([X_test], columns=features)
     result = dt.predict(test)[0]
-    print("\n PREDICTION: " + result)
+    print("\nPREDICTION: " + result)
 
 
 @timer
@@ -163,7 +164,7 @@ def _build_dot_node(node: DTNode, colors) -> str:
         color = colors[node.leaf_value]
         dot_data += f"{id(node)} [label=\"{node.leaf_value}\", fillcolor=\"{color}\"] ;\n"
     else:
-        dot_data += f"{id(node)} [label=\"{node.feature_name}\"] ;\n"
+        dot_data += f"{id(node)} [label=\"{node.feature_name}?\"] ;\n"
         for i, child in enumerate(node.children):
             if type(node.split_values) == np.ndarray:
                 split_value = node.split_values[i]

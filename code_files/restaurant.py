@@ -6,6 +6,11 @@ from sklearn.metrics import accuracy_score
 from sklearn.model_selection import LeaveOneOut
 from sklearn.model_selection import train_test_split
 
+from six import StringIO
+from IPython.display import Image  
+from sklearn.tree import export_graphviz
+import pydotplus
+
 
 def main():
     # Lê o csv
@@ -30,14 +35,21 @@ def main():
     features = df.copy()
   
     
-    dt = DecisionTreeModel(min_samples_split=2, max_depth=10)
-    # dt = DecisionTreeSKLearn(min_samples_split=2, max_depth=3)
+    # dt = DecisionTreeModel(min_samples_split=2, max_depth=10)
+    dt = DecisionTreeSKLearn(min_samples_split=2, max_depth=3)
 
     ## escolher entre cross validation ou fazer um só predict
     # cross_validation(dt, target, features)
     teste(dt, target, features)   
     cross_validation(dt, target, features)
 
+    #   Better Decision Tree Visualisation
+    dot_data = StringIO()
+    print(export_graphviz(dt, out_file=None,filled=True, rounded=True,special_characters=True, feature_names = features.columns,class_names=['0','1']))
+    # graph = pydotplus.graph_from_dot_data(dot_data.getvalue())  
+    # graph.write_png('restaurant.png')
+    # Image(graph.create_png())
+     
     
 def cross_validation(dt, target, features):
     # Perform Leave-One-Out Cross-Validation (LOOCV)
@@ -65,7 +77,7 @@ def teste(dt, target, features):
     for i in range(5):
         X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=0.3, random_state=i)
         dt.fit(X_train, y_train)
-        dt.TreePrinter()
+        # dt.TreePrinter()
 
         y_pred = dt.predict(X_test)
         print(accuracy_score(y_test, y_pred))
