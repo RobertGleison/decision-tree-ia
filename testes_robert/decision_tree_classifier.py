@@ -184,11 +184,11 @@ class DecisionTreeClassifier:
 
         if node.split_type == 'discrete': 
             for i, node_value in enumerate(node.split_values):
-                if value == node_value:
+                if value == str(node_value):
                     return self.make_prediction(row, node.children[i], X_test)  
         
         elif node.split_type == 'continuous':
-            if value <= node.split_values:
+            if float(value) <= node.split_values:
                 return self.make_prediction(row, node.children[0], X_test)  
             return self.make_prediction(row, node.children[1], X_test)
 
