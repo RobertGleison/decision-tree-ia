@@ -33,7 +33,7 @@ class DecisionTreeClassifier:
             return DTNode(leaf_value=self._calculate_leaf_value(y_train))
         
         best_split = self._get_best_split(dataset) 
-        if best_split["info_gain"]==0: return DTNode(leaf_value=self._calculate_leaf_value(y_train)) # Ou é uma folha ou o split dividiu 50/50. Se o melhor split dividiu 50/50, é pq todos os splits possíveis são ou folhas ou dividem 50/50. Ambos os casos CREIO EU, NA MINHA CABEÇA, melhor retornar uma folha. No caso do 50/50, retorna um valor aleatorio.
+        if best_split == {}: return DTNode(leaf_value=self._calculate_leaf_value(y_train)) # Ou é uma folha ou o split dividiu 50/50. Se o melhor split dividiu 50/50, é pq todos os splits possíveis são ou folhas ou dividem 50/50. Ambos os casos CREIO EU, NA MINHA CABEÇA, melhor retornar uma folha. No caso do 50/50, retorna um valor aleatorio.
 
         children = []
         for child in best_split["children"]:
@@ -135,7 +135,6 @@ class DecisionTreeClassifier:
         '''Get the information gain for a node splitted by a binary or threshold value'''
         left_rate = left_dataset.shape[0] / parent_dataset.shape[0]
         right_rate = right_dataset.shape[0] / parent_dataset.shape[0]
-        # return self._get_impurity(parent_dataset.iloc[:,-1]) - left_rate*self._get_impurity(left_dataset.iloc[:,-1]) + right_rate*self._get_impurity(right_dataset.iloc[:,-1])
         total_impurity = left_rate*self._get_impurity(left_dataset.iloc[:,-1]) + right_rate*self._get_impurity(right_dataset.iloc[:,-1])
         return self._get_impurity(y_parent) - total_impurity
     
