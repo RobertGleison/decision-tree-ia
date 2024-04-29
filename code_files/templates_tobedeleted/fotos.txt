@@ -11,3 +11,45 @@ import pydotplus
     graph.write_png('restaurant.png')
     Image(graph.create_png())
      
+
+
+
+print(export_graphviz(dt, out_file=None,filled=True, rounded=True,special_characters=True, feature_names = features.columns,class_names=['0','1']))
+
+
+
+
+
+digraph Tree {
+node [shape=box, style="filled, rounded", color="black", fontname="helvetica"] ;
+edge [fontname="helvetica"] ;
+0 [label=<Glucose &le; 127.5<br/>gini = 0.456<br/>samples = 537<br/>value = [348, 189]<br/>class = 0>, fillcolor="#f3c5a5"] ;
+1 [label=<Age &le; 28.5<br/>gini = 0.333<br/>samples = 346<br/>value = [273, 73]<br/>class = 0>, fillcolor="#eca36e"] ;
+0 -> 1 [labeldistance=2.5, labelangle=45, headlabel="True"] ;
+2 [label=<BMI &le; 49.1<br/>gini = 0.142<br/>samples = 195<br/>value = [180, 15]<br/>class = 0>, fillcolor="#e78c49"] ;
+1 -> 2 ;
+3 [label=<gini = 0.126<br/>samples = 192<br/>value = [179, 13]<br/>class = 0>, fillcolor="#e78a47"] ;
+2 -> 3 ;
+4 [label=<gini = 0.444<br/>samples = 3<br/>value = [1, 2]<br/>class = 1>, fillcolor="#9ccef2"] ;
+2 -> 4 ;
+5 [label=<BMI &le; 26.8<br/>gini = 0.473<br/>samples = 151<br/>value = [93, 58]<br/>class = 0>, fillcolor="#f5d0b4"] ;
+1 -> 5 ;
+6 [label=<gini = 0.124<br/>samples = 30<br/>value = [28, 2]<br/>class = 0>, fillcolor="#e78a47"] ;
+5 -> 6 ;
+7 [label=<gini = 0.497<br/>samples = 121<br/>value = [65, 56]<br/>class = 0>, fillcolor="#fbeee4"] ;
+5 -> 7 ;
+8 [label=<BMI &le; 29.95<br/>gini = 0.477<br/>samples = 191<br/>value = [75, 116]<br/>class = 1>, fillcolor="#b9dcf6"] ;
+0 -> 8 [labeldistance=2.5, labelangle=-45, headlabel="False"] ;
+9 [label=<Glucose &le; 161.5<br/>gini = 0.431<br/>samples = 54<br/>value = [37, 17]<br/>class = 0>, fillcolor="#f1bb94"] ;
+8 -> 9 ;
+10 [label=<gini = 0.351<br/>samples = 44<br/>value = [34, 10]<br/>class = 0>, fillcolor="#eda673"] ;
+9 -> 10 ;
+11 [label=<gini = 0.42<br/>samples = 10<br/>value = [3, 7]<br/>class = 1>, fillcolor="#8ec7f0"] ;
+9 -> 11 ;
+12 [label=<Glucose &le; 165.5<br/>gini = 0.401<br/>samples = 137<br/>value = [38, 99]<br/>class = 1>, fillcolor="#85c3ef"] ;
+8 -> 12 ;
+13 [label=<gini = 0.453<br/>samples = 95<br/>value = [33, 62]<br/>class = 1>, fillcolor="#a2d1f3"] ;
+12 -> 13 ;
+14 [label=<gini = 0.21<br/>samples = 42<br/>value = [5, 37]<br/>class = 1>, fillcolor="#54aae9"] ;
+12 -> 14 ;
+}
