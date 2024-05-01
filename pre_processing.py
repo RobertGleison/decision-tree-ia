@@ -99,10 +99,10 @@ def make_prediction(df, dt: DecisionTreeModel):
         if feature_value.isdigit():
             X_test.append(float(feature_value))
             continue
-        if feature_value == 'FALSE' or feature_value == 'false': 
+        if feature_value.upper() == 'FALSE': 
             X_test.append('False')
             continue
-        if feature_value == 'TRUE' or feature_value == 'true': 
+        if feature_value.upper == 'TRUE': 
             X_test.append('True')
             continue
         X_test.append(feature_value)
@@ -137,7 +137,6 @@ def _k_fold_cross_validation(dt: DecisionTreeModel, target: Series, features: Da
         dt.fit(X_train, y_train)
         y_pred = dt.predict(X_test)
         accuracies.append(_accuracy_score(y_test, y_pred))
-    # _make_dot_representation(dt, features, target)
     return accuracies, y_test.shape[0]
     
 
@@ -157,7 +156,6 @@ def _make_dot_representation(dt: DataFrame, colors) -> None:
     dot_data += "edge [fontname=\"times\"] ;\n"
     dot_data += _build_dot_node(dt.root, colors)
     dot_data += "}"
-    # png_file_path = os.path.join(os.getcwd(), 'decision_tree.png')
     graph = pydotplus.graph_from_dot_data(dot_data)  
     graph.write_png('graph.png')
     Image(graph.create_png())
