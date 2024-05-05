@@ -26,6 +26,7 @@ class DecisionTreeClassifier:
 
     def _build_tree(self, dataset: DataFrame, curr_depth: int = 0) -> DTNode:
         '''Construct the Decision Tree from the root node''' 
+        # print(curr_depth)
         X_train, y_train = dataset.iloc[:,:-1], dataset.iloc[:,-1]
         num_samples = X_train.shape[0]
         

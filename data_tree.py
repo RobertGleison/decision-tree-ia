@@ -2,7 +2,7 @@ import pandas as pd
 from decision_tree_classifier import DecisionTreeClassifier as DecisionTreeModel
 from pandas import DataFrame
 
-class DecisionTree:
+class DataTree:
 
     def __init__(self, df: DataFrame, min_samples_split=5, max_depth=10, criterium='entropy') -> None:
         self.decisiontree = DecisionTreeModel(max_depth, min_samples_split, criterium)

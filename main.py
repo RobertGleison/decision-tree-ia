@@ -1,17 +1,19 @@
 from  decision_tree_classifier import DecisionTreeClassifier as DecisionTreeModel
 from statistical_analysis import StatisticalAnalysis
-from decision_tree import DecisionTree
+from data_tree import DataTree
 from IPython.display import Image  
 from node import DTNode
 from time import time
 import pandas as pd
 import numpy as np
 import pydotplus
-import os
+# import os
+from joblib import load
 
 IRIS_CSV = 'csv_files/iris.csv'
 RESTAURANT_CSV = 'csv_files/restaurant.csv'
 WEATHER_CSV = 'csv_files/weather.csv'
+CONNECT4_CSV = 'csv_files/connect4.csv'
 
 
 
@@ -29,48 +31,56 @@ def timer(func):
 def main() -> None:
     chose_csv, samples, depth, criterium  = _print_options()
     df = pd.read_csv(chose_csv)
-    df.drop(['ID'], axis=1, inplace=True)
 
+    if chose_csv == CONNECT4_CSV:
+        dt_final = load('connect4_dt.joblib')
 
-    # STATISTICAL ANALYSIS
-    dt_analysis = StatisticalAnalysis(df, samples, depth, criterium)
-    dt_analysis.analysis()
+    else:
+        df.drop(['ID'], axis=1, inplace=True)
 
+        # STATISTICAL ANALYSIS
+        dt_analysis = StatisticalAnalysis(df, samples, depth, criterium)
+        dt_analysis.analysis()
 
-    # TREE FOR PREDICTIONS
-    dt_final = DecisionTree(df=df, min_samples_split=samples, max_depth=depth, criterium=criterium)
-    dt_final.fit()
-
+        # TREE FOR PREDICTIONS
+        dt_final = DataTree(df=df, min_samples_split=samples, max_depth=depth, criterium=criterium)
+        dt_final.fit()
 
     # MAKE THE GRAPH IMAGE
     target = df.iloc[:,-1]
     colors = {key:value for (value, key) in zip(["#bad9d3", "#d4b4dd", "#fdd9d9"], pd.unique(target))}
     _make_dot_representation(dt_final.decisiontree, colors)
 
-    # LOOP
-    dt_final.predict()
+    # MAKE A PREDICTION
+    prediction = input("Do you wanna make a prediction? (y/n) ")
+    while (prediction == 'y'):
+        dt_final.predict()
+        prediction = input("Do you wanna make a prediction? (y/n) ")
 
 
 # Melhorar execption handler
 def _print_options() -> None:
     csvs = {1: 'csv_files/iris.csv',
             2: 'csv_files/restaurant.csv',
-            3: 'csv_files/weather.csv'}
-    try:
-        print("Choose the dataset to train the Decision Tree:"
-                "\n1 - Iris.csv\n"
-                "2 - Restaurant.csv\n"
-                "3 - Weather.csv\n")
-        chose_csv = int(input("Dataset escolhido: "))
-        samples = int(input("Escolha um número mínimo de linhas para split (recomendado: 2-5): "))
-        depth = int(input("Escolha a profundidade máxima da Decision Tree (recomendado: 5-10): "))
-        criterium = input("Escolha o critério de decisão de atributos ('gini' ou 'entropy'): ")
-        return csvs[chose_csv], samples, depth, criterium
+            3: 'csv_files/weather.csv',
+            4: 'csv_files/connect4.csv'}
     
-    except: 
-        os.system('clear')
-        print("Enter a valid option for dataset")
-        _print_options()
+    print("Choose the dataset to train the Decision Tree:"
+            "\n1 - Iris.csv\n"
+            "2 - Restaurant.csv\n"
+            "3 - Weather.csv\n"
+            "4 - Connect4.csv\n")
+    chose_csv = int(input("Dataset escolhido: "))
+    if chose_csv==4: return csvs[chose_csv], 0, 0, 0
+    samples = int(input("Escolha um número mínimo de linhas para split (recomendado: 2-5): "))
+    depth = int(input("Escolha a profundidade máxima da Decision Tree (recomendado: 5-10): "))
+    criterium = input("Escolha o critério de decisão de atributos ('gini' ou 'entropy'): ")
+    return csvs[chose_csv], samples, depth, criterium
+    
+    # except: 
+    #     os.system('clear')
+    #     print("Enter a valid option for dataset")
+    #     _print_options()
 
 
 
