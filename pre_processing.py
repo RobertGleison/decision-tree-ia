@@ -1,4 +1,5 @@
 from  decision_tree_classifier import DecisionTreeClassifier as DecisionTreeModel
+from teste import DecisionTree
 from sklearn.model_selection import LeaveOneOut
 from sklearn.model_selection import KFold
 from pandas import Series, DataFrame
@@ -40,7 +41,6 @@ def main() -> None:
     if chose_csv == IRIS_CSV:
         accuracies, test_size = _k_fold_cross_validation(dt_model, target, features, 10)
     if chose_csv == RESTAURANT_CSV:
-        # accuracies, test_size = _k_fold_cross_validation(dt_model, target, features, 5)
         accuracies, test_size = _leave_one_out_cross_validation(dt_model, target, features)
     if chose_csv == WEATHER_CSV:
         accuracies, test_size = _leave_one_out_cross_validation(dt_model, target, features)
@@ -50,12 +50,13 @@ def main() -> None:
 
 
     # TREE FOR PREDICTIONS
-    dt_total = DecisionTreeModel(min_samples_split=samples, max_depth=depth)
-    dt_total.fit(features, target)
+    dt_final = DecisionTree(df=df, min_samples_split=samples, max_depth=depth)
+    dt_final.fit()
     colors = {key:value for (value, key) in zip(["#bad9d3", "#d4b4dd", "#fdd9d9"], pd.unique(target))}
-    _make_dot_representation(dt_total, colors)
+    _make_dot_representation(dt_final.decisiontree, colors)
     
-    make_prediction(features, dt_total)
+    # make_prediction(features, dt_final)
+    dt_final.predict()
 
 
 
@@ -90,26 +91,26 @@ def _print_options() -> None:
         _print_options()
 
 
-def make_prediction(df, dt: DecisionTreeModel):
-    print("\n\nPREDICTION ---------")
-    features = list(df.columns)
-    X_test = []
-    for feature in features:
-        feature_value = input(feature + "? ")
-        if feature_value.isdigit():
-            X_test.append(float(feature_value))
-            continue
-        if feature_value.upper() == 'FALSE': 
-            X_test.append('False')
-            continue
-        if feature_value.upper == 'TRUE': 
-            X_test.append('True')
-            continue
-        X_test.append(feature_value)
+# def make_prediction(df: DataFrame, dt: DecisionTreeModel):
+#     print("\n\nPREDICTION ---------")
+#     features = list(df.columns)
+#     X_test = []
+#     for feature in features:
+#         feature_value = input(feature + "? ")
+#         if feature_value.isdigit():
+#             X_test.append(float(feature_value))
+#             continue
+#         if feature_value.upper() == 'FALSE': 
+#             X_test.append('False')
+#             continue
+#         if feature_value.upper == 'TRUE': 
+#             X_test.append('True')
+#             continue
+#         X_test.append(feature_value)
     
-    test = pd.DataFrame([X_test], columns=features)
-    result = dt.predict(test)[0]
-    print("\nPREDICTION: ", result)
+#     test = pd.DataFrame([X_test], columns=features)
+#     result = dt.predict(test)[0]
+#     print("\nPREDICTION: ", result)
 
 
 @timer
@@ -151,7 +152,7 @@ def _accuracy_score(y_test: Series, y_pred: Series) -> float:
 
 
 
-def _make_dot_representation(dt: DataFrame, colors) -> None:
+def _make_dot_representation(dt: DecisionTreeModel, colors: dict) -> None:
     dot_data = "digraph Tree {\nnode [shape=box, style=\"filled, rounded\"] ;\n"
     dot_data += "edge [fontname=\"times\"] ;\n"
     dot_data += _build_dot_node(dt.root, colors)
@@ -162,7 +163,7 @@ def _make_dot_representation(dt: DataFrame, colors) -> None:
 
 
 
-def _build_dot_node(node: DTNode, colors) -> str:
+def _build_dot_node(node: DTNode, colors: dict) -> str:
     dot_data = ""
     if node.leaf_value is not None:
         color = colors[node.leaf_value]
