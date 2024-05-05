@@ -1,14 +1,11 @@
-from typing import Union
-import numpy as np
 import pandas as pd
-import random
 from decision_tree_classifier import DecisionTreeClassifier as DecisionTreeModel
-from pandas import DataFrame, Series
+from pandas import DataFrame
 
 class DecisionTree:
 
-    def __init__(self, df: DataFrame, min_samples_split=5, max_depth=10) -> None:
-        self.decisiontree = DecisionTreeModel(max_depth, min_samples_split, criterium='entropy')
+    def __init__(self, df: DataFrame, min_samples_split=5, max_depth=10, criterium='entropy') -> None:
+        self.decisiontree = DecisionTreeModel(max_depth, min_samples_split, criterium)
         self.dataframe = df
         self.target_data = df.iloc[:,-1]
         self.features_data = df.iloc[:,:-1]

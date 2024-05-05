@@ -1,8 +1,6 @@
 from  decision_tree_classifier import DecisionTreeClassifier as DecisionTreeModel
-from teste import DecisionTree
-from sklearn.model_selection import LeaveOneOut
-from sklearn.model_selection import KFold
-from pandas import Series, DataFrame
+from statistical_analysis import StatisticalAnalysis
+from decision_tree import DecisionTree
 from IPython.display import Image  
 from node import DTNode
 from time import time
@@ -10,8 +8,6 @@ import pandas as pd
 import numpy as np
 import pydotplus
 import os
-
-
 
 IRIS_CSV = 'csv_files/iris.csv'
 RESTAURANT_CSV = 'csv_files/restaurant.csv'
@@ -34,39 +30,25 @@ def main() -> None:
     chose_csv, samples, depth, criterium  = _print_options()
     df = pd.read_csv(chose_csv)
     df.drop(['ID'], axis=1, inplace=True)
-    target = df.iloc[:,-1]
-    features = df.iloc[:,:-1]
-    dt_model = DecisionTreeModel(min_samples_split=samples, max_depth=depth)
-   
-    if chose_csv == IRIS_CSV:
-        accuracies, test_size = _k_fold_cross_validation(dt_model, target, features, 10)
-    if chose_csv == RESTAURANT_CSV:
-        accuracies, test_size = _leave_one_out_cross_validation(dt_model, target, features)
-    if chose_csv == WEATHER_CSV:
-        accuracies, test_size = _leave_one_out_cross_validation(dt_model, target, features)
-    
-    mean_accuracy = sum(accuracies)/len(accuracies)
-    _print_statistics(mean_accuracy, test_size, features, chose_csv)
+
+
+    # STATISTICAL ANALYSIS
+    dt_analysis = StatisticalAnalysis(df, samples, depth, criterium)
+    dt_analysis.analysis()
 
 
     # TREE FOR PREDICTIONS
-    dt_final = DecisionTree(df=df, min_samples_split=samples, max_depth=depth)
+    dt_final = DecisionTree(df=df, min_samples_split=samples, max_depth=depth, criterium=criterium)
     dt_final.fit()
+
+
+    # MAKE THE GRAPH IMAGE
+    target = df.iloc[:,-1]
     colors = {key:value for (value, key) in zip(["#bad9d3", "#d4b4dd", "#fdd9d9"], pd.unique(target))}
     _make_dot_representation(dt_final.decisiontree, colors)
-    
-    # make_prediction(features, dt_final)
+
+    # LOOP
     dt_final.predict()
-
-
-
-
-def _print_statistics(mean_accuracy: float, test_size: int, features: Series, chose_csv: str) -> None:
-    print(f"Model test size: {test_size} rows")
-    print(f"Model test size: {features.shape[0] - test_size} rows")
-    print(f"Model accuracy: {(mean_accuracy * 100):.2f}%" )
-    if chose_csv == IRIS_CSV: print(f"Cross validation type: K-Fold")
-    else: print(f"Cross validation type: Leave One Out")
 
 
 # Melhorar execption handler
@@ -89,66 +71,6 @@ def _print_options() -> None:
         os.system('clear')
         print("Enter a valid option for dataset")
         _print_options()
-
-
-# def make_prediction(df: DataFrame, dt: DecisionTreeModel):
-#     print("\n\nPREDICTION ---------")
-#     features = list(df.columns)
-#     X_test = []
-#     for feature in features:
-#         feature_value = input(feature + "? ")
-#         if feature_value.isdigit():
-#             X_test.append(float(feature_value))
-#             continue
-#         if feature_value.upper() == 'FALSE': 
-#             X_test.append('False')
-#             continue
-#         if feature_value.upper == 'TRUE': 
-#             X_test.append('True')
-#             continue
-#         X_test.append(feature_value)
-    
-#     test = pd.DataFrame([X_test], columns=features)
-#     result = dt.predict(test)[0]
-#     print("\nPREDICTION: ", result)
-
-
-@timer
-def _leave_one_out_cross_validation(dt: DecisionTreeModel, target: Series, features: DataFrame) -> tuple[list, int]:
-    loo = LeaveOneOut()
-    accuracies = []
-    for train_index, test_index in loo.split(features):
-        X_train, X_test = features.iloc[train_index], features.iloc[test_index]
-        y_train, y_test = target.iloc[train_index], target.iloc[test_index]
-        dt.fit(X_train, y_train)
-        y_pred = dt.predict(X_test)
-        accuracies.append(_accuracy_score(y_test, y_pred)) 
-    return accuracies, y_test.shape[0]
-
-
-@timer
-def _k_fold_cross_validation(dt: DecisionTreeModel, target: Series, features: DataFrame, n_test: int =10)-> tuple[list, int]:
-    kf = KFold(n_splits=n_test)
-    accuracies = []
-
-    for train_index, test_index in kf.split(features):
-        X_train, X_test = features.iloc[train_index], features.iloc[test_index]
-        y_train, y_test = target.iloc[train_index], target.iloc[test_index]
-
-        dt.fit(X_train, y_train)
-        y_pred = dt.predict(X_test)
-        accuracies.append(_accuracy_score(y_test, y_pred))
-    return accuracies, y_test.shape[0]
-    
-
-
-def _accuracy_score(y_test: Series, y_pred: Series) -> float:
-    total_counter = 0
-    right_predictions = 0
-    for i in range(len(y_test)):
-        if y_pred[i] == y_test.iloc[i]: right_predictions += 1
-        total_counter += 1
-    return right_predictions / total_counter
 
 
 
