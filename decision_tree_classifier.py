@@ -180,7 +180,7 @@ class DecisionTreeClassifier:
         if node.leaf_value is not None: 
             return node.leaf_value
         
-        value = row[node.feature_index] 
+        value = row.iloc[node.feature_index] 
         attribute = node.feature_name
 
         if node.split_type == 'discrete': 
