@@ -19,7 +19,7 @@ class DataTree:
         X_test = []
         for feature in self.features_names:
             feature_value = input(feature + "? ")
-            if feature_value.isdigit():
+            if feature_value.replace(".", "").isnumeric():
                 X_test.append(float(feature_value))
                 continue
             if feature_value.upper() == 'FALSE': 
