@@ -3,7 +3,6 @@ from sklearn.model_selection import LeaveOneOut, KFold
 from pandas import Series, DataFrame
 
 class StatisticalAnalysis:
-    
     def __init__(self, dataframe: DataFrame, samples: int, depth: int, criterium: str) -> None:
         self.dt = DecisionTreeModel(min_samples_split=samples, max_depth=depth, criterium=criterium)
         self.df = dataframe
@@ -58,7 +57,28 @@ class StatisticalAnalysis:
         return right_predictions / total_counter
     
 
+
     def _print_statistics(self, mean_accuracy: float, test_size: int) -> None:
-        print(f"Model test size: {test_size} rows")
+        print(f"\nModel test size: {test_size} rows")
         print(f"Model test size: {len(self.df) - test_size} rows")
-        print(f"Model accuracy: {(mean_accuracy * 100):.2f}%" )
+        print(f"Model accuracy: {(mean_accuracy * 100):.2f}%\n\n" )
+
+
+
+def tree_output(node, indentation=''):
+    output = ''
+    
+    if node is None:
+        return ''
+    
+    if node.leaf_value is not None:
+        output += indentation + ' ' + str(node.leaf_value) + ''
+    else:
+        for value, child in zip(node.split_values, node.children):
+            output += indentation + '<' + str(node.feature_name) + '>\n'
+
+            output += indentation + ' ' + value + ':'
+            output += tree_output(child, indentation + '    ')
+    return output
+    
+

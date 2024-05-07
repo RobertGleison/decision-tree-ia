@@ -1,5 +1,5 @@
 from  decision_tree_classifier import DecisionTreeClassifier as DecisionTreeModel
-from statistical_analysis import StatisticalAnalysis
+from statistical_analysis import StatisticalAnalysis, tree_output
 from data_tree import DataTree
 from IPython.display import Image  
 from node import DTNode
@@ -50,12 +50,12 @@ def main() -> None:
     target = df.iloc[:,-1]
     colors = {key:value for (value, key) in zip(["#bad9d3", "#d4b4dd", "#fdd9d9"], pd.unique(target))}
     _make_dot_representation(dt_final.decisiontree, colors)
-
+    print(tree_output(dt_final.decisiontree.root))
     # MAKE A PREDICTION
-    prediction = input("Do you wanna make a prediction? (y/n) ")
+    prediction = input("\nDo you wanna make a prediction? (y/n) ")
     while (prediction == 'y'):
         dt_final.predict()
-        prediction = input("Do you wanna make a prediction? (y/n) ")
+        prediction = input("\nDo you wanna make a prediction? (y/n) ")
 
 
 # Melhorar execption handler
