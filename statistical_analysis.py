@@ -74,10 +74,16 @@ def tree_output(node, indentation='', depth=0):
     if node.leaf_value is not None:
         output += indentation + str(node.leaf_value) +  ' ' +  str(node.leaf_counter) + '\n'
     else:
-        for value, child in zip(node.split_values, node.children):
-            output += indentation + '<' + str(node.feature_name) + '>\n'
-            output += indentation + ' ' + value + ':\n'
-            output += tree_output(child, indentation + '    ', depth + 1)
+        if node.split_type == 'discrete':
+            for value, child in zip(node.split_values, node.children):
+                output += indentation + '<' + str(node.feature_name) + '>\n'
+                output += indentation + ' ' + value + ':\n'
+                output += tree_output(child, indentation + '    ', depth + 1)
+        if node.split_type == 'continuous':
+            for child in node.children:
+                output += indentation + '<' + str(node.feature_name) + '>\n'
+                # output += indentation + ' <' + value + ':\n'
+                output += tree_output(child, indentation + '    ', depth + 1)
     return output
     
 
