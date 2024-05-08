@@ -65,20 +65,19 @@ class StatisticalAnalysis:
 
 
 
-def tree_output(node, indentation=''):
+def tree_output(node, indentation='', depth=0):
     output = ''
     
     if node is None:
         return ''
     
     if node.leaf_value is not None:
-        output += indentation + ' ' + str(node.leaf_value) + ''
+        output += indentation + str(node.leaf_value) +  ' ' +  str(node.leaf_counter) + '\n'
     else:
         for value, child in zip(node.split_values, node.children):
             output += indentation + '<' + str(node.feature_name) + '>\n'
-
-            output += indentation + ' ' + value + ':'
-            output += tree_output(child, indentation + '    ')
+            output += indentation + ' ' + value + ':\n'
+            output += tree_output(child, indentation + '    ', depth + 1)
     return output
     
 

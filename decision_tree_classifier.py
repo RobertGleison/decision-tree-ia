@@ -31,7 +31,7 @@ class DecisionTreeClassifier:
         num_samples = X_train.shape[0]
         
         if num_samples<self.min_samples_split or curr_depth==self.max_depth or self._is_pure(y_train): # Usei um early return aq
-            return DTNode(leaf_value=self._calculate_leaf_value(y_train))
+            return DTNode(leaf_value=self._calculate_leaf_value(y_train),)
         
         best_split = self._get_best_split(dataset) 
         if best_split == {}: return DTNode(leaf_value=self._calculate_leaf_value(y_train)) # Ou é uma folha ou o split dividiu 50/50. Se o melhor split dividiu 50/50, é pq todos os splits possíveis são ou folhas ou dividem 50/50. Ambos os casos CREIO EU, NA MINHA CABEÇA, melhor retornar uma folha. No caso do 50/50, retorna um valor aleatorio.
@@ -172,6 +172,30 @@ class DecisionTreeClassifier:
     def predict(self, X_test: DataFrame) -> list:
         '''Predict target column for a dataframe'''
         return [self.make_prediction(row, self.root, X_test) for _, row in X_test.iterrows()]
+
+
+
+    def fill_leaf_counters(self, Dataset: DataFrame) -> None:
+         for _, row in Dataset.iterrows():
+             self.fill_leaf_counter(row, self.root, Dataset)
+
+
+
+    def fill_leaf_counter(self, row: tuple, node: DTNode, Dataset: DataFrame) -> None:
+        if node.leaf_value is not None: 
+            return node.increment_leaf_counter()
+        
+        value = row.iloc[node.feature_index] 
+
+        if node.split_type == 'discrete': 
+            for i, node_value in enumerate(node.split_values):
+                if value == node_value:
+                    return self.fill_leaf_counter(row, node.children[i], Dataset)  
+        
+        elif node.split_type == 'continuous':
+            if value <= node.split_values:
+                return self.fill_leaf_counter(row, node.children[0], Dataset)  
+            return self.fill_leaf_counter(row, node.children[1], Dataset)
 
 
 

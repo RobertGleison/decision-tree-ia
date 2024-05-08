@@ -45,6 +45,7 @@ def main() -> None:
         # TREE FOR PREDICTIONS
         dt_final = DataTree(df=df, min_samples_split=samples, max_depth=depth, criterium=criterium)
         dt_final.fit()
+        dt_final.decisiontree.fill_leaf_counters(df)
 
     # MAKE THE GRAPH IMAGE
     target = df.iloc[:,-1]

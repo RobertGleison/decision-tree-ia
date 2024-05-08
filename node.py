@@ -7,6 +7,10 @@ class DTNode:
         self.split_values = split_values 
         self.split_type = split_type
         self.leaf_value = leaf_value 
+        self.leaf_counter = 0
 
+
+    def increment_leaf_counter(self):
+        self.leaf_counter+=1
 
 
