@@ -72,6 +72,7 @@ def tree_output(node, indentation='', depth=0):
         return ''
     
     if node.leaf_value is not None:
+        # output += indentation + str(node.leaf_value) +  ' ' + '\n'
         output += indentation + str(node.leaf_value) +  ' ' +  str(node.leaf_counter) + '\n'
     else:
         if node.split_type == 'discrete':
