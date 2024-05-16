@@ -1,5 +1,5 @@
 import pandas as pd
-from decision_tree_classifier import DecisionTreeClassifier as DecisionTreeModel
+from delete.decision_tree_classifier import DecisionTreeClassifier as DecisionTreeModel
 from pandas import DataFrame
 
 class DataTree:

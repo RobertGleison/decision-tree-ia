@@ -1,4 +1,4 @@
-from decision_tree_classifier import DecisionTreeClassifier as DecisionTreeModel
+from delete.decision_tree_classifier import DecisionTreeClassifier as DecisionTreeModel
 from sklearn.model_selection import LeaveOneOut, KFold
 from pandas import Series, DataFrame
 
@@ -60,7 +60,7 @@ class StatisticalAnalysis:
 
     def _print_statistics(self, mean_accuracy: float, test_size: int) -> None:
         print(f"\nModel test size: {test_size} rows")
-        print(f"Model test size: {len(self.df) - test_size} rows")
+        print(f"Model train size: {len(self.df) - test_size} rows")
         print(f"Model accuracy: {(mean_accuracy * 100):.2f}%\n\n" )
 
 

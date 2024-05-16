@@ -1,5 +1,5 @@
 from typing import Union
-from node import DTNode
+from delete.node import DTNode
 import numpy as np
 import pandas as pd
 import random

@@ -1,10 +1,11 @@
-from node import Node
+from sophia.node import Node
 from pandas import DataFrame
 import numpy as np
 import pandas as pd
+# import time
 
-import pydotplus
-from IPython.display import Image  
+# import pydotplus
+# from IPython.display import Image  
 
 class DecisionTree:
 
@@ -41,13 +42,15 @@ class DecisionTree:
             max_value = max(counting)[1]
             return max_value
         
+        # print(depth)
+        
         features = dataset.iloc[:,:-1]
         targets = dataset.iloc[:,-1]
         num_samples = len(dataset)      ########## mudei 
 
         # reaches the limit of the tree
         ispure = (len(set(targets)) == 1)
-        if num_samples < self.min_samples or depth == self.max_depth or ispure or len(features.columns)==0 or len(dataset)==0:   ########## mudei
+        if num_samples < self.min_samples or depth == self.max_depth or ispure or len(features.columns)==0 or num_samples==0:   ########## mudei
             return Node(value=calculate_leaf_value(targets), is_leaf=True, dataset=dataset)
         
         best_split = self.get_best_split(dataset)
@@ -57,9 +60,10 @@ class DecisionTree:
 
         children = []
         for child in best_split["children"]:
-            if len(child)==0: 
+            if len(child) == 0: 
                 children.append(Node(value=calculate_leaf_value(targets), is_leaf=True, dataset=child))
-            else: children.append(self.build_tree(child, depth+1))
+            else: 
+                children.append(self.build_tree(child, depth+1))
         return Node(dataset, children, best_split["value"], best_split["info_gain"], best_split["feature_name"], best_split["split_type"])
     
 
@@ -72,16 +76,16 @@ class DecisionTree:
 
         for feature_name in features.columns:
             values = self.dataset[feature_name]
-            feature_type = self.feature_types[feature_name] 
+            feature_type = self.feature_types[feature_name]
+            parent_entropy = self.entropy(targets) 
 
             if feature_type == 'discrete':
-                children, info_gain = self.discrete_split(dataset, feature_name, pd.unique(values), targets)
+                children, info_gain = self.discrete_split(dataset, feature_name, pd.unique(values), targets, parent_entropy)
                 max_infogain = self.update_best_split(best_split, info_gain, max_infogain, feature_type, children, pd.unique(values.map(lambda x: str(x))), feature_name)
                 continue
 
             for value in pd.unique(values):
-                children, info_gain = self.continuous_split(dataset, feature_name, value, targets)
-                if children is None: continue
+                children, info_gain = self.continuous_split(dataset, feature_name, value, targets, parent_entropy)
                 max_infogain = self.update_best_split(best_split, info_gain, max_infogain, feature_type, children, value, feature_name)
 
         return best_split
@@ -96,16 +100,16 @@ class DecisionTree:
             return info_gain
         return max_infogain
     
-    def continuous_split(self, dataset: DataFrame, feature_name, threshold, targets):
+    def continuous_split(self, dataset: DataFrame, feature_name, threshold, targets, parent_entropy):
         left = dataset[dataset[feature_name] <= threshold].copy()
         right = dataset[dataset[feature_name] > threshold].copy()
-        left.drop([feature_name], axis=1, inplace=True)   #################### mudei
+        left.drop([feature_name], axis=1, inplace=True)
         right.drop([feature_name], axis=1, inplace=True)
         children = [left, right]
-        info_gain = self.info_gain(dataset, children, targets)
+        info_gain = self.info_gain(dataset, children, targets, parent_entropy)
         return children, info_gain
     
-    def discrete_split(self, dataset: DataFrame, feature_name, values, targets):
+    def discrete_split(self, dataset: DataFrame, feature_name, values, targets, parent_entropy):
         # labels = list(pd.unique(self.dataset[feature_name]))
         labels = list(values)
         children = []
@@ -113,23 +117,30 @@ class DecisionTree:
             child_dataset = dataset[dataset[feature_name] == label].copy()
             child_dataset.drop([feature_name], axis=1, inplace=True)
             children.append(child_dataset)
-        info_gain = self.info_gain(dataset, children, targets)
+        info_gain = self.info_gain(dataset, children, targets, parent_entropy)
         return children, info_gain
     
-    def info_gain(self, parent_dataset, children, parent_targets):
-        children_entropy = 0
-        for child_dataset in children:
-            children_entropy += len(child_dataset) / len(parent_dataset) * self.entropy(child_dataset.iloc[:, -1])
-        return self.entropy(parent_targets) - children_entropy
+    def info_gain(self, parent_dataset: DataFrame, children: list[DataFrame], parent_targets: DataFrame, parent_entropy):
+        # children_entropy = 0
+        parent_length = len(parent_dataset)
+        # for child_dataset in children:
+        #     children_entropy += len(child_dataset) / parent_length * self.entropy(child_dataset.iloc[:, -1])
+        children_entropy = np.sum([(len(child_dataset) / parent_length) * self.entropy(child_dataset.iloc[:, -1]) for child_dataset in children])
+        return parent_entropy - children_entropy
+
 
     def entropy(self, targets) -> float:
         '''Get the entropy value for a node'''
-        class_labels = pd.unique(targets)
-        entropy = 0
-        for label in class_labels:
-            label_positives = len(targets[targets == label]) / len(targets)
-            entropy += -(label_positives * np.log2(label_positives))
-        return entropy
+        counts = targets.value_counts()
+        probs = counts/len(targets)
+        return np.sum(-probs * np.log2(probs))
+    
+        # class_labels = pd.unique(targets)
+        # entropy = 0
+        # for label in class_labels:
+        #     label_positives = len(targets[targets == label]) / len(targets)
+        #     entropy += -(label_positives * np.log2(label_positives))
+        # return entropy
     
 
     def predict(self, X_test: DataFrame) -> list:
@@ -161,79 +172,82 @@ class DecisionTree:
         
 
 
-def main():
-    df = pd.read_csv('csv_files/restaurant.csv')
-    df.drop(['ID'], axis=1, inplace=True)
+# def main():
+#     df = pd.read_csv('csv_files/weather.csv')
+#     df.drop(['ID'], axis=1, inplace=True)
 
-    dt = DecisionTree(dataset=df)
-    dt.fit(df)
+#     start = time.time()
+#     dt = DecisionTree(dataset=df)
+#     dt.fit(df)
+#     end = time.time()
+#     print(end-start)
 
-    target = df.iloc[:,-1]
-    colors = {key:value for (value, key) in zip(["#bad9d3", "#d4b4dd", "#fdd9d9"], pd.unique(target))}
-    make_dot_representation(dt, colors)
+#     target = df.iloc[:,-1]
+#     colors = {key:value for (value, key) in zip(["#bad9d3", "#d4b4dd", "#fdd9d9"], pd.unique(target))}
+#     make_dot_representation(dt, colors)
 
-    predict(dt, df)
+#     predict(dt, df)
 
 
-def predict(dt: DecisionTree, df: DataFrame):
-    print("\n\nPREDICTION ---------")
-    features = df.iloc[:,:-1] 
-    features_names = features.columns
-    X_test = []
-    for feature in features_names:
-        feature_value = input(feature + "? ")
-        if feature_value.replace(".", "").isnumeric():
-            X_test.append(float(feature_value))
-            continue
-        if feature_value.upper() == 'FALSE': 
-            X_test.append("False")
-            continue
-        if feature_value.upper() == 'TRUE': 
-            X_test.append("True")
-            continue
-        X_test.append(feature_value)
+# def predict(dt: DecisionTree, df: DataFrame):
+#     print("\n\nPREDICTION ---------")
+#     features = df.iloc[:,:-1] 
+#     features_names = features.columns
+#     X_test = []
+#     for feature in features_names:
+#         feature_value = input(feature + "? ")
+#         if feature_value.replace(".", "").isnumeric():
+#             X_test.append(float(feature_value))
+#             continue
+#         if feature_value.upper() == 'FALSE': 
+#             X_test.append("False")
+#             continue
+#         if feature_value.upper() == 'TRUE': 
+#             X_test.append("True")
+#             continue
+#         X_test.append(feature_value)
     
-    test = pd.DataFrame([X_test], columns=features_names)
-    result = dt.predict(test)[0]
-    print("\nPREDICTION: ", result)
+#     test = pd.DataFrame([X_test], columns=features_names)
+#     result = dt.predict(test)[0]
+#     print("\nPREDICTION: ", result)
 
     
 
-def make_dot_representation(dt: DecisionTree, colors: dict) -> None:
-    dot_data = "digraph Tree {\nnode [shape=box, style=\"filled, rounded\"] ;\n"
-    dot_data += "edge [fontname=\"times\"] ;\n"
-    dot_data += _build_dot_node(dt.root, colors)
-    dot_data += "}"
-    graph = pydotplus.graph_from_dot_data(dot_data)  
-    graph.write_png('restaurantesophia.png')
-    Image(graph.create_png())
+# def make_dot_representation(dt: DecisionTree, colors: dict) -> None:
+#     dot_data = "digraph Tree {\nnode [shape=box, style=\"filled, rounded\"] ;\n"
+#     dot_data += "edge [fontname=\"times\"] ;\n"
+#     dot_data += _build_dot_node(dt.root, colors)
+#     dot_data += "}"
+#     graph = pydotplus.graph_from_dot_data(dot_data)  
+#     graph.write_png('graph.png')
+#     Image(graph.create_png())
 
 
 
-def _build_dot_node(node: Node, colors: dict) -> str:
-    dot_data = ""
-    if node.is_leaf:
-        color = colors[node.value]
-        if node.ispure:
-            simbolo = '*'
-        else: simbolo = ''
-        dot_data += f"{id(node)} [label=\"{node.value}\", xlabel=\"{node.size}{simbolo}\", fillcolor=\"{color}\"] ;\n"
-    else:
-        dot_data += f"{id(node)} [label=\"{node.feature_name}?\", xlabel=\"{node.size}\"] ;\n"
-        for i, child in enumerate(node.children):
-            if type(node.value) == np.ndarray:
-                split_value = node.value[i]
-            else: split_value = node.value
-            if node.split_type == 'discrete':
-                dot_data += f"{id(node)} -> {id(child)} [label=\"{split_value}\"] ;\n"
-            else:
-                if i==0: simbolo = '<='
-                else: simbolo = '>'
-                dot_data += f"{id(node)} -> {id(child)} [label=\"{simbolo}{split_value}\"] ;\n"
-            dot_data += _build_dot_node(child, colors)
-    return dot_data
+# def _build_dot_node(node: Node, colors: dict) -> str:
+#     dot_data = ""
+#     if node.is_leaf:
+#         color = colors[node.value]
+#         if node.ispure:
+#             simbolo = '*'
+#         else: simbolo = ''
+#         dot_data += f"{id(node)} [label=\"{node.value}\", xlabel=\"{node.size}{simbolo}\", fillcolor=\"{color}\"] ;\n"
+#     else:
+#         dot_data += f"{id(node)} [label=\"{node.feature_name}?\", xlabel=\"{node.size}\"] ;\n"
+#         for i, child in enumerate(node.children):
+#             if type(node.value) == np.ndarray:
+#                 split_value = node.value[i]
+#             else: split_value = node.value
+#             if node.split_type == 'discrete':
+#                 dot_data += f"{id(node)} -> {id(child)} [label=\"{split_value}\"] ;\n"
+#             else:
+#                 if i==0: simbolo = '<='
+#                 else: simbolo = '>'
+#                 dot_data += f"{id(node)} -> {id(child)} [label=\"{simbolo}{split_value}\"] ;\n"
+#             dot_data += _build_dot_node(child, colors)
+#     return dot_data
 
 
-main()
+# main()
 
 
