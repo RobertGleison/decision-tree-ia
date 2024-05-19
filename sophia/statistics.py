@@ -15,30 +15,30 @@ class StatisticalAnalysis:
     def analysis(self):
         if len(self.df)<50:
             accuracies, test_size = self._leave_one_out_cross_validation()
-            print(f"\nCross validation type: Leave One Out")
+            print(f"Cross validation type: Leave One Out")
         else:
             accuracies, test_size = self._k_fold_cross_validation()
-            print(f"\nCross validation type: K-Fold")
+            print(f"Cross validation type: K-Fold")
         mean_accuracy = sum(accuracies) / len(accuracies)
         self._print_statistics(mean_accuracy, test_size)
 
-        accuracies, test_size = self.general_analysis()
-        mean_accuracy = sum(accuracies) / len(accuracies)
-        self.print_analysis(mean_accuracy, test_size)
+        # accuracies, test_size = self.general_analysis()
+        # mean_accuracy = sum(accuracies) / len(accuracies)
+        # self.print_analysis(mean_accuracy, test_size)
 
 
-    def general_analysis(self):
-        accuracies = []
-        dt = DecisionTree(self.df)
-        for i in range (35,45):
-            train, test = train_test_split(self.df, test_size=0.3, random_state=i)
-            dt = DecisionTree(self.df)
-            dt.fit(train)
+    # def general_analysis(self):
+    #     accuracies = []
+    #     dt = DecisionTree(self.df)
+    #     for i in range (35,45):
+    #         train, test = train_test_split(self.df, test_size=0.3, random_state=i)
+    #         dt = DecisionTree(self.df)
+    #         dt.fit(train)
 
-            target_test = test.iloc[:,-1]
-            predictions = dt.predict(test)
-            accuracies.append(self._accuracy_score(target_test, predictions))
-        return accuracies, target_test.shape[0]
+    #         target_test = test.iloc[:,-1]
+    #         predictions = dt.predict(test)
+    #         accuracies.append(self._accuracy_score(target_test, predictions))
+    #     return accuracies, target_test.shape[0]
 
         
     def _leave_one_out_cross_validation(self) -> tuple[list, int]:
@@ -81,11 +81,11 @@ class StatisticalAnalysis:
         return right_predictions / total_counter
     
 
-    def print_analysis(self, mean_accuracy, test_size):
-        print("GENERAL:")
-        print(f"Model test size: {test_size} rows")
-        print(f"Model train size: {len(self.df) - test_size} rows")
-        print(f"Model accuracy: {(mean_accuracy * 100):.2f}%\n\n" )
+    # def print_analysis(self, mean_accuracy, test_size):
+    #     print("GENERAL:")
+    #     print(f"Model test size: {test_size} rows")
+    #     print(f"Model train size: {len(self.df) - test_size} rows")
+    #     print(f"Model accuracy: {(mean_accuracy * 100):.2f}%\n\n" )
 
 
     def _print_statistics(self, mean_accuracy: float, test_size: int) -> None:

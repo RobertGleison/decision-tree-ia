@@ -6,15 +6,11 @@ import pandas as pd
 class DecisionTree:
 
     def __init__(self, dataset: DataFrame, max_depth: int = 100, min_samples: int = 0) -> None:
-        
-        def fill_types(dataset: DataFrame):
-            types = {}
-            for feature_name in dataset.columns:
-                if type(dataset[feature_name][0]) == np.int64 or type(dataset[feature_name][0]) == np.float64:
-                    types[feature_name] = 'continuous'
-                else:
-                    types[feature_name] = 'discrete'
-            return types
+        def fill_types(dataset: pd.DataFrame):
+            def mapping(tuplo):
+                if tuplo[1] in [np.int64, np.float64]: return (tuplo[0], 'continuous')
+                else: return (tuplo[0],'discrete')
+            return dict(map(mapping, zip(dataset.columns, dataset.dtypes)))
         
         self.root: Node = None
         self.dataset: DataFrame = dataset
@@ -22,10 +18,11 @@ class DecisionTree:
         self.min_samples: int = min_samples
         self.feature_types = fill_types(dataset)
 
+    def __str__(self) -> str:
+        return self.toString(self.root, "")
 
     def fit(self, dataset: DataFrame):
         '''Fit the tree with a trainning DataFrame'''
-        # dataset = pd.concat((features, targets), axis=1)
         self.root = self.build_tree(dataset)
 
     def build_tree(self, dataset: DataFrame, depth: int = 0) -> Node:
@@ -42,7 +39,7 @@ class DecisionTree:
         
         features = dataset.iloc[:,:-1]
         targets = dataset.iloc[:,-1]
-        num_samples = len(dataset)      ########## mudei 
+        num_samples = len(dataset)
 
         # reaches the limit of the tree
         ispure = (len(set(targets)) == 1)
@@ -106,7 +103,6 @@ class DecisionTree:
         return children, info_gain
     
     def discrete_split(self, dataset: DataFrame, feature_name, values, targets, parent_entropy):
-        # labels = list(pd.unique(self.dataset[feature_name]))
         labels = list(values)
         children = []
         for label in labels: 
@@ -117,10 +113,7 @@ class DecisionTree:
         return children, info_gain
     
     def info_gain(self, parent_dataset: DataFrame, children: list[DataFrame], parent_targets: DataFrame, parent_entropy):
-        # children_entropy = 0
         parent_length = len(parent_dataset)
-        # for child_dataset in children:
-        #     children_entropy += len(child_dataset) / parent_length * self.entropy(child_dataset.iloc[:, -1])
         children_entropy = np.sum([(len(child_dataset) / parent_length) * self.entropy(child_dataset.iloc[:, -1]) for child_dataset in children])
         return parent_entropy - children_entropy
 
@@ -131,22 +124,13 @@ class DecisionTree:
         probs = counts/len(targets)
         return np.sum(-probs * np.log2(probs))
     
-        # class_labels = pd.unique(targets)
-        # entropy = 0
-        # for label in class_labels:
-        #     label_positives = len(targets[targets == label]) / len(targets)
-        #     entropy += -(label_positives * np.log2(label_positives))
-        # return entropy
-    
 
     def predict(self, X_test: DataFrame) -> list:
         '''Predict target column for a dataframe'''
-        return [self.make_prediction(row, self.root, X_test) for _, row in X_test.iterrows()]
+        return [self.make_prediction(row, self.root) for _, row in X_test.iterrows()]
 
-    
 
-    # tirar XTest?
-    def make_prediction(self, row: tuple, node: Node, X_test: DataFrame):
+    def make_prediction(self, row: tuple, node: Node):
         '''Predict target for each row in dataframe'''
         if node.is_leaf: 
             return node.value
@@ -156,11 +140,44 @@ class DecisionTree:
         if node.split_type == 'discrete': 
             for i, node_value in enumerate(node.value):
                 if value == node_value:
-                    return self.make_prediction(row, node.children[i], X_test)  
+                    return self.make_prediction(row, node.children[i])  
         
         elif node.split_type == 'continuous':
             if value <= node.value:
-                return self.make_prediction(row, node.children[0], X_test)  
-            return self.make_prediction(row, node.children[1], X_test)
+                return self.make_prediction(row, node.children[0])  
+            return self.make_prediction(row, node.children[1])
 
         return None
+
+
+    def toString(self, node: Node, indent: str):
+        string = ""
+        if not node.children:
+            return string
+        
+        add = " " * 5
+        string += indent + f"<{node.feature_name}>" + "\n"
+        indent += add
+
+        for i in range(len(node.children)):
+            child = node.children[i]
+
+            if type(node.value) in [np.int64, np.float64]:
+                if i==0: simbolo="<="
+                else: simbolo=">"
+                if child.is_leaf: #se for folha
+                    string += indent + f"value {simbolo} {node.value}: {child.value} ({child.size})" + "\n"
+                else:
+                    string += indent + f"value {simbolo} {node.value}:" + "\n"
+                    string += self.toString(child, indent+add)
+            
+            else: 
+                if child.is_leaf: #se for folha
+                    string += indent + f"{node.value[i]}: {child.value} ({child.size})" + "\n"  # valor da feature: valor da folha (qtd de linhas)
+                else:
+                    string += indent + f"{node.value[i]}:" + "\n"
+                    string += self.toString(child, indent+add)
+        
+        return string
+
+       

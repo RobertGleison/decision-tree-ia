@@ -29,7 +29,7 @@ def main():
         dt = DecisionTree(dataset=df)
         dt.fit(df)
         end = time.time()
-        print(end-start)
+        print(f'\nFit time: {end-start:.2f} seconds',)
 
         StatisticalAnalysis(df)
 
@@ -57,7 +57,7 @@ def _print_options() -> None:
 
 
 def predict(dt: DecisionTree, df: DataFrame):
-    print("\n\nPREDICTION ---------")
+    print("\n\n========== PREDICTION ==========")
     features = df.iloc[:,:-1] 
     features_names = features.columns
     X_test = []
