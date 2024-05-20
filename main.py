@@ -17,7 +17,7 @@ def main():
 
     
     if chose_csv == CONNECT4_CSV:
-        dt = load('sophia/dt_connect4.joblib')
+        dt = load('classifier/dt_connect4.joblib')
     else: 
         df.drop(['ID'], axis=1, inplace=True)
         start = time.time()

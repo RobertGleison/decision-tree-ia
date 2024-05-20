@@ -13,7 +13,7 @@ class DecisionTree:
 
 
     def __str__(self) -> str:
-        return utils.toString(self.root, "")
+        return self.toString(self.root, "")
 
 
     def attr_mapping(self,tuplo):
@@ -129,6 +129,38 @@ class DecisionTree:
         if value <= node.value:
             return self.make_prediction(row, node.children[0])  
         return self.make_prediction(row, node.children[1])
+    
+
+
+    def toString(self, node: Node, indent: str) -> str:
+        string = ""
+        if not node.children:
+            return string
+        
+        
+        add = " " * 5
+        indent += add
+
+        for i in range(len(node.children)):
+            child = node.children[i]
+
+            if type(node.value) in [np.int64, np.float64]:
+                if i==0: simbolo="<="
+                else: simbolo=">"
+                if child.is_leaf:
+                    string += indent + f"\"{node.feature_name}\" {simbolo} {node.value}: {child.value} ({child.size})" + "\n"
+                else:
+                    string += indent + f"\"{node.feature_name}\" {simbolo} {node.value}:" + "\n"
+                    string += toString(child, indent+add)
+            else: 
+                if child.is_leaf: 
+                    string += indent + f"\"{node.feature_name}\" {node.value[i]}: {child.value} ({child.size})" + "\n"  
+                else:
+                    string += indent + f"\"{node.feature_name}\" {node.value[i]}:" + "\n"
+                    string += toString(child, indent+add)
+        
+        return string
+
 
        
    

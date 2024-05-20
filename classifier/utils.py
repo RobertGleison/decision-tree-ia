@@ -40,34 +40,6 @@ def _build_dot_node(node: Node, colors: dict) -> str:
     return dot_data
 
 
-def toString(node: Node, indent: str) -> str:
-    string = ""
-    if not node.children:
-        return string
-    
-    add = " " * (len(node.feature_name))
-    indent += add
-
-    for i in range(len(node.children)):
-        child = node.children[i]
-
-        if type(node.value) in [np.int64, np.float64]:
-            if i==0: simbolo="<="
-            else: simbolo=">"
-            if child.is_leaf:
-                string += indent + f"<{node.feature_name}> value {simbolo} {node.value}: {child.value} ({child.size})" + "\n"
-            else:
-                string += indent + f"<{node.feature_name}> value {simbolo} {node.value}:" + "\n"
-                string += toString(child, indent+add)
-        else: 
-            if child.is_leaf: 
-                string += indent + f"<{node.feature_name}> {node.value[i]}: {child.value} ({child.size})" + "\n"  
-            else:
-                string += indent + f"<{node.feature_name}>  {node.value[i]}:" + "\n"
-                string += toString(child, indent+add)
-    
-    return string
-
 
 def predict(dt, df) -> any:
     print("\n========== PREDICTION ==========")
