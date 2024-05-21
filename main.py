@@ -30,8 +30,10 @@ def main():
     target = df.iloc[:,-1]
     colors = {key:value for (value, key) in zip(["#bad9d3", "#d4b4dd", "#fdd9d9"], pd.unique(target))}
     utils.make_dot_representation(dt, colors)
+
+    print("========== TREE ==========")
     print(dt)
-    # utils.predict(dt, df)
+    utils.predict(dt, df)
 
 
 def _print_options() -> None:

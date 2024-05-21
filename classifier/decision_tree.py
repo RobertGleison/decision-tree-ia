@@ -151,13 +151,13 @@ class DecisionTree:
                     string += indent + f"\"{node.feature_name}\" {simbolo} {node.value}: {child.value} ({child.size})" + "\n"
                 else:
                     string += indent + f"\"{node.feature_name}\" {simbolo} {node.value}:" + "\n"
-                    string += toString(child, indent+add)
+                    string += self.toString(child, indent+add)
             else: 
                 if child.is_leaf: 
                     string += indent + f"\"{node.feature_name}\" {node.value[i]}: {child.value} ({child.size})" + "\n"  
                 else:
                     string += indent + f"\"{node.feature_name}\" {node.value[i]}:" + "\n"
-                    string += toString(child, indent+add)
+                    string += self.toString(child, indent+add)
         
         return string
 
