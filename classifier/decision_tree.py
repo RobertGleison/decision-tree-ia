@@ -2,7 +2,6 @@ from classifier.node import Node
 from pandas import DataFrame, Series
 import numpy as np
 import pandas as pd
-from classifier import utils
 
 class DecisionTree:
     def __init__(self, dataset: DataFrame, min_samples: int = 2) -> None:
@@ -12,13 +11,13 @@ class DecisionTree:
         self.feature_types = dict(map(self.attr_mapping, zip(dataset.columns, dataset.dtypes)))
 
 
-    def __str__(self) -> str:
-        return self.toString(self.root, "")
-
-
     def attr_mapping(self,tuplo):
         if tuplo[1] in [np.int64, np.float64]: return (tuplo[0], 'continuous')
         return (tuplo[0],'discrete')
+    
+
+    def __str__(self) -> str:
+        return self.toString(self.root, "")
 
 
     def fit(self, dataset: DataFrame) -> None:
